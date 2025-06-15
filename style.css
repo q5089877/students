@@ -1,0 +1,54 @@
+/* style.css */
+
+body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Animations */
+
+/* For item pickup/highlight */
+.animate-pulse-item {
+    animation: pulse-item-animation 0.8s ease-i(索引):64
+ cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installationn-out;
+}
+
+@keyframes pulse-item-animation {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+    }
+}
+
+/* For negative feedback on event text */
+.animate-shake-text {
+    animation: shake-text-animation 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    transform: translate3d(0, 0, 0);
+}
+
+@keyframes shake-text-animation {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+    40%, 60% { transform: translate3d(3px, 0, 0); }
+}
+
+/* For positive feedback on event text */
+.animate-bounce-text {
+    animation: bounce-text-animation 0.6s ease-out;
+}
+
+@keyframes bounce-text-animation {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+/* Ensure popups are above other content if z-index issues arise, though Tailwind handles this well */
+.popup {
+    /* Tailwind's z-50 is usually sufficient, but you can override if needed */
+}
