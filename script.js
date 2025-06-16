@@ -685,7 +685,7 @@
 
                 // 體力顯示 (值 + 迷你條)
                 const staminaDisplay = document.createElement('div');
-                staminaDisplay.className = 'flex items-center text-xs w-[70px]'; // 再縮短體力條寬度
+                staminaDisplay.className = 'flex items-center text-xs w-[55px]'; // 縮短體力條寬度
                 const staminaVal = document.createElement('span');
                 staminaVal.className = `mr-1 w-5 text-right ${student.stamina > (INITIAL_STAMINA * 0.3) ? 'text-gray-700' : 'text-red-600 font-medium'}`;
                 staminaVal.textContent = student.stamina; // 使用 0.3 常數
@@ -702,7 +702,7 @@
 
                 // 水分顯示 (值 + 迷你條)
                 const waterDisplay = document.createElement('div');
-                waterDisplay.className = 'flex items-center text-xs w-[70px]'; // 再縮短水分條寬度
+                waterDisplay.className = 'flex items-center text-xs w-[55px]'; // 縮短水分條寬度
                 const waterVal = document.createElement('span');
                 waterVal.className = `mr-1 w-5 text-right ${student.water > (INITIAL_WATER * 0.3) ? 'text-gray-700' : 'text-red-600 font-medium'}`;
                 waterVal.textContent = student.water; // 使用 0.3 常數
@@ -1130,10 +1130,23 @@
             showPopup("挑戰失敗！😭", `所有同學都已精疲力盡或脫水！${teacherName}和同學們無法繼續前進…`);
             return true; // 遊戲結束
         } else if (sequenceIndex >= currentEventSequence.length) {
+            // 遊戲勝利
             playSound(audioGameWin);
+
+            // 1. 優先顯示通關圖片 (end.jpg)
+            //    這裡會使用現有的照片解鎖彈窗來顯示圖片。
+            //    圖片下方的文字可以自訂，例如 "通關紀念！"
+            showPhotoUnlockNotification(PHOTO_BASE_PATH + "end.jpg", "通關紀念！");
+
+            // 2. 準備並顯示原本的文字版勝利彈窗。
+            //    這個彈窗會被圖片彈窗覆蓋，關閉圖片彈窗後即可見。
             let survivorNames = students.filter(s => s.active).map(s => s.name).join("、");
-            if (students.filter(s => s.active).length === students.length) survivorNames = "六年四班全體同學";
-            else if (students.filter(s => s.active).length === 0) survivorNames = "沒有人"; // Should be caught by above
+            if (students.filter(s => s.active).length === students.length) {
+                survivorNames = "六年四班全體同學";
+            } else if (students.filter(s => s.active).length === 0) {
+                // 此情況應已被 activeStudentCount === 0 的檢查捕獲
+                survivorNames = "沒有人";
+            }
             showPopup("恭喜過關！🏆", `${teacherName}和 ${survivorNames} 成功登上山頂！這就是團結、智慧與堅持的力量！🎉`);
             return true; // 遊戲結束
         }
