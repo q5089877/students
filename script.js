@@ -683,7 +683,7 @@
 
                 // 體力顯示 (值 + 迷你條)
                 const staminaDisplay = document.createElement('div');
-                staminaDisplay.className = 'flex items-center text-xs w-[70px]'; // 固定寬度以對齊
+                staminaDisplay.className = 'flex items-center text-xs w-[100px]'; // 增加寬度以加長體力條
                 const staminaVal = document.createElement('span');
                 staminaVal.className = `mr-1 w-5 text-right ${student.stamina > (INITIAL_STAMINA * 0.3) ? 'text-gray-700' : 'text-red-600 font-medium'}`;
                 staminaVal.textContent = student.stamina; // 使用 0.3 常數
@@ -701,6 +701,7 @@
                 // 水分顯示 (值 + 迷你條)
                 const waterDisplay = document.createElement('div');
                 waterDisplay.className = 'flex items-center text-xs w-[70px]'; // 固定寬度以對齊
+                waterDisplay.className = 'flex items-center text-xs w-[100px]'; // 增加寬度以加長水分條
                 const waterVal = document.createElement('span');
                 waterVal.className = `mr-1 w-5 text-right ${student.water > (INITIAL_WATER * 0.3) ? 'text-gray-700' : 'text-red-600 font-medium'}`;
                 waterVal.textContent = student.water; // 使用 0.3 常數
@@ -1143,10 +1144,8 @@
     function showPopup(title, message) {
         // 先给老师名字上色
         const teacherNameRegex = new RegExp(escapeRegExp(teacherName), 'g');
-        const formattedMessage = message.replace(
-            teacherNameRegex,
-            `<span class="text-emerald-700 font-bold">${teacherName}</span>`
-        );
+    // 使用實際的 HTML 標籤，而不是實體編碼
+    const formattedMessage = message.replace(teacherNameRegex, `<span class="text-emerald-700 font-bold">${teacherName}</span>`);
 
         popupTitleElem.textContent = title;
         popupMessageElem.innerHTML = formattedMessage;  // 用 innerHTML 渲染样式
