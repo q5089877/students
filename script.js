@@ -77,6 +77,7 @@
     const popupTitleElem = document.getElementById('popupTitle');
     const popupMessageElem = document.getElementById('popupMessage');
     const restartButtonPopup = document.getElementById('restartButtonPopup');
+    const studentListContainer = document.getElementById('studentListContainer'); // 新增：獲取學生列表容器
     const popupContent = document.getElementById('popupContent');
 
     // 照片解鎖彈出視窗 UI 元素
@@ -622,6 +623,63 @@
                 itemDisplayElements[itemKey].classList.toggle('opacity-50', !inventory[itemKey]);
             }
         }
+
+        // 更新右側學生列表
+        if (studentListContainer) {
+            studentListContainer.innerHTML = ''; // 清空現有列表
+
+            // 對學生列表進行隨機排序以供顯示
+            const shuffledStudents = shuffleArray([...students]);
+
+            shuffledStudents.forEach(student => {
+                const studentDiv = document.createElement('div');
+                // 使用 flex 讓姓名和體力/水分水平排列
+                studentDiv.className = `p-2 rounded-md shadow-sm flex items-center space-x-2 ${student.active ? 'bg-green-100' : 'bg-red-100 opacity-75'}`;
+
+                const nameElem = document.createElement('p');
+                studentDiv.appendChild(nameElem);
+                // 將字體從 text-xs 改為 text-sm，並保持其他樣式
+                nameElem.className = `font-semibold text-sm flex-1 truncate ${student.active ? 'text-green-800' : 'text-red-800'}`;
+                nameElem.textContent = student.name + (student.active ? '' : ' (倒)');
+                nameElem.title = student.name + (student.active ? '' : ' (已倒下)'); // Tooltip for full name
+
+                // 體力顯示 (值 + 迷你條)
+                const staminaDisplay = document.createElement('div');
+                staminaDisplay.className = 'flex items-center text-xs w-[70px]'; // 固定寬度以對齊
+                const staminaVal = document.createElement('span');
+                staminaVal.className = `mr-1 w-5 text-right ${student.stamina > (INITIAL_STAMINA * 0.3) ? 'text-gray-700' : 'text-red-600 font-medium'}`;
+                staminaVal.textContent = student.stamina;
+                const staminaBarOuter = document.createElement('div');
+                staminaBarOuter.className = 'flex-1 h-2 bg-gray-300 rounded-full'; // flex-1 for bar to take rest of space
+                const staminaBarInner = document.createElement('div');
+                const sPercent = Math.max(0, (student.stamina / INITIAL_STAMINA) * 100);
+                staminaBarInner.className = `h-full rounded-full ${sPercent > 70 ? 'bg-green-500' : sPercent > 30 ? 'bg-yellow-400' : 'bg-red-500'}`;
+                staminaBarInner.style.width = `${sPercent}%`;
+                staminaBarOuter.appendChild(staminaBarInner);
+                staminaDisplay.appendChild(staminaVal);
+                staminaDisplay.appendChild(staminaBarOuter);
+                studentDiv.appendChild(staminaDisplay);
+
+                // 水分顯示 (值 + 迷你條)
+                const waterDisplay = document.createElement('div');
+                waterDisplay.className = 'flex items-center text-xs w-[70px]'; // 固定寬度以對齊
+                const waterVal = document.createElement('span');
+                waterVal.className = `mr-1 w-5 text-right ${student.water > (INITIAL_WATER * 0.3) ? 'text-gray-700' : 'text-red-600 font-medium'}`;
+                waterVal.textContent = student.water;
+                const waterBarOuter = document.createElement('div');
+                waterBarOuter.className = 'flex-1 h-2 bg-gray-300 rounded-full'; // flex-1 for bar
+                const waterBarInner = document.createElement('div');
+                const wPercent = Math.max(0, (student.water / INITIAL_WATER) * 100);
+                waterBarInner.className = `h-full rounded-full ${wPercent > 70 ? 'bg-blue-500' : wPercent > 30 ? 'bg-indigo-400' : 'bg-red-500'}`;
+                waterBarInner.style.width = `${wPercent}%`;
+                waterBarOuter.appendChild(waterBarInner);
+                waterDisplay.appendChild(waterVal);
+                waterDisplay.appendChild(waterBarOuter);
+                studentDiv.appendChild(waterDisplay);
+
+                studentListContainer.appendChild(studentDiv);
+            });
+        }
     }
 
     // 輔助函數：格式化包含學生姓名的文字
@@ -683,6 +741,8 @@
             unlockedPhotoName.textContent = photoFilename;
             photoUnlockPopup.classList.remove('hidden');
             photoUnlockPopup.classList.add('flex');
+            photoUnlockPopup.classList.remove('opacity-0'); // 移除透明
+            photoUnlockPopup.classList.add('opacity-100');  // 設置為完全可見 (配合 transition-opacity)
             playSound(audioItemPickup); // 可以重用物品拾取音效或新增專用音效
         }
     }
@@ -692,6 +752,8 @@
         if (photoUnlockPopup) {
             photoUnlockPopup.classList.remove('flex');
             photoUnlockPopup.classList.add('hidden');
+            photoUnlockPopup.classList.remove('opacity-100'); // 移除可見
+            photoUnlockPopup.classList.add('opacity-0');   // 恢復初始透明狀態
             if (unlockedPhotoImg) unlockedPhotoImg.src = ""; // 清除圖片
             if (unlockedPhotoName) unlockedPhotoName.textContent = "";
         }
@@ -898,9 +960,8 @@
         // 短暫延遲後，進入下一個事件或檢查遊戲狀態
         setTimeout(() => {
             sequenceIndex++; // 進入下一個事件
-            checkGameStatus(); // 檢查遊戲是否結束或勝利
-            // 如果遊戲未結束 (彈出視窗未顯示)，則顯示下一個事件
-            if (gameOverPopup.classList.contains('hidden')) {
+            const isGameOver = checkGameStatus(); // 檢查遊戲是否結束或勝利
+            if (!isGameOver) { // 如果遊戲未結束
                 displayEvent();
             }
         }, 2000); // 等待 2 秒讓玩家看清結果
