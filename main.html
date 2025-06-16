@@ -74,10 +74,10 @@
     </div>
 
     <!-- 遊戲主畫面 -->
-    <div id="gamePlayScreen" class="hidden flex flex-col md:flex-row items-start justify-center p-4 md:p-6 gap-4 md:gap-6 h-full w-full max-w-screen-xl">
+    <div id="gamePlayScreen" class="hidden flex flex-col md:flex-row items-start justify-center p-4 md:p-6 lg:p-8 gap-4 md:gap-6 lg:gap-8 h-full w-full max-w-screen-2xl">
 
         <!-- 左側主遊戲區域 -->
-        <div id="mainGameArea" class="w-full md:w-3/5 lg:w-2/3 bg-slate-50 bg-opacity-90 p-4 md:p-6 rounded-xl shadow-xl flex flex-col items-center max-h-[90vh] overflow-y-auto">
+        <div id="mainGameArea" class="w-full md:w-3/5 lg:w-7/12 xl:w-2/3 bg-slate-50 bg-opacity-90 p-4 md:p-6 rounded-xl shadow-xl flex flex-col items-center max-h-[90vh] md:max-h-[calc(100vh-4rem)] overflow-y-auto custom-scrollbar">
             <!-- 進度條和當前關卡 -->
             <div class="w-full mb-3">
                 <div class="flex justify-between items-center mb-1">
@@ -88,7 +88,7 @@
                     <div id="stageProgressBar" class="resource-bar-fill h-full bg-purple-500 rounded-full"></div>
                 </div>
             </div>
-            <p id="progressText" class="text-xl md:text-2xl font-bold text-gray-800 mb-4 text-center"></p>
+            <p id="progressText" class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-4 text-center"></p>
 
             <!-- 隊伍平均體力條顯示 -->
             <div class="mb-3 w-full">
@@ -120,7 +120,7 @@
             <!-- 物品欄顯示 -->
             <div class="mb-4 w-full text-left bg-slate-100 bg-opacity-80 p-3 rounded-xl shadow-md">
                 <h3 class="text-lg font-semibold text-gray-800 mb-2">物品欄🎒</h3>
-                <div id="inventoryDisplay" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                <div id="inventoryDisplay" class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2">
                     <div id="itemEnergyBar" class="item p-2 bg-yellow-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">能量棒🍫</div>
                     <div id="itemSnack" class="item p-2 bg-orange-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">零食🍪</div>
                     <div id="itemMap" class="item p-2 bg-green-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">地圖🗺️</div>
@@ -133,18 +133,18 @@
 
             <!-- 事件文字 -->
             <div class="my-4 p-4 bg-amber-100 bg-opacity-80 rounded-lg shadow-inner min-h-[100px] w-full">
-                <p id="eventText" class="text-xl md:text-2xl text-gray-700 leading-relaxed"></p>
+                <p id="eventText" class="text-xl md:text-2xl lg:text-xl text-gray-700 leading-relaxed"></p> <!-- Adjusted lg text size for better fit with more items -->
                 <p id="outcomeText" class="mt-2 text-sm text-gray-500 italic"></p> <!-- outcomeText 現在主要用於顯示附加的倒下訊息，或可移除 -->
             </div>
 
             <!-- 選項區域 -->
-            <div id="optionsArea" class="w-full grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div id="optionsArea" class="w-full grid grid-cols-1 md:grid-cols-2 gap-3 lg:gap-4">
                 <!-- 選項按鈕會由 JavaScript 動態填入 -->
             </div>
         </div>
 
         <!-- 右側學生狀態列表 -->
-        <div id="studentListArea" class="w-full md:w-2/5 lg:w-1/3 bg-slate-50 bg-opacity-90 p-4 rounded-xl shadow-xl flex flex-col max-h-[90vh]">
+        <div id="studentListArea" class="w-full md:w-2/5 lg:w-5/12 xl:w-1/3 bg-slate-50 bg-opacity-90 p-4 rounded-xl shadow-xl flex flex-col max-h-[90vh] md:max-h-[calc(100vh-4rem)] custom-scrollbar">
             <h2 class="text-xl font-semibold text-gray-800 mb-3 text-center border-b pb-2 border-gray-300">全班狀態</h2>
         </div>
     </div>

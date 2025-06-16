@@ -685,7 +685,15 @@
 
                 // 體力顯示 (值 + 迷你條)
                 const staminaDisplay = document.createElement('div');
+<<<<<<< HEAD
                 staminaDisplay.className = 'flex items-center text-xs w-[55px]'; // 縮短體力條寬度
+=======
+<<<<<<< HEAD
+                staminaDisplay.className = 'flex items-center text-xs w-[70px]'; // 再縮短體力條寬度
+=======
+                staminaDisplay.className = 'flex items-center text-xs w-[150px]'; // 增加寬度以加長體力條 (調整為 150px)
+>>>>>>> 76855b6e798cdb16b373a4a3921690aecbacee99
+>>>>>>> aaa65297fce41d0ba5af29f781b8f74c582f7ee6
                 const staminaVal = document.createElement('span');
                 staminaVal.className = `mr-1 w-5 text-right ${student.stamina > (INITIAL_STAMINA * 0.3) ? 'text-gray-700' : 'text-red-600 font-medium'}`;
                 staminaVal.textContent = student.stamina; // 使用 0.3 常數
@@ -702,7 +710,15 @@
 
                 // 水分顯示 (值 + 迷你條)
                 const waterDisplay = document.createElement('div');
+<<<<<<< HEAD
                 waterDisplay.className = 'flex items-center text-xs w-[55px]'; // 縮短水分條寬度
+=======
+<<<<<<< HEAD
+                waterDisplay.className = 'flex items-center text-xs w-[70px]'; // 再縮短水分條寬度
+=======
+                waterDisplay.className = 'flex items-center text-xs w-[150px]'; // 增加寬度以加長水分條 (調整為 150px)
+>>>>>>> 76855b6e798cdb16b373a4a3921690aecbacee99
+>>>>>>> aaa65297fce41d0ba5af29f781b8f74c582f7ee6
                 const waterVal = document.createElement('span');
                 waterVal.className = `mr-1 w-5 text-right ${student.water > (INITIAL_WATER * 0.3) ? 'text-gray-700' : 'text-red-600 font-medium'}`;
                 waterVal.textContent = student.water; // 使用 0.3 常數
