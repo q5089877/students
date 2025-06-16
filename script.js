@@ -532,15 +532,17 @@
         currentEventSequence.push(eventsByStage.intro[0]); // 加入開場事件
 
         // 從各階段事件池中隨機選取更多事件加入序列
-        // 每個階段選取 8 到 15 個事件，確保事件數量大幅增加，總數接近或超過100
-        const numForestEvents = 8 + Math.floor(Math.random() * 8); // 8-15
-        const numPathEvents = 8 + Math.floor(Math.random() * 8);   // 8-15
-        const numSlopeEvents = 8 + Math.floor(Math.random() * 8);   // 8-15
+        // 固定總關卡數為30 (1 intro + 28 main stages + 1 climax)
+        // 將28個主要關卡分配給三個階段
+        const numForestEvents = 9;
+        const numPathEvents = 9;
+        const numSlopeEvents = 10; // 9 + 9 + 10 = 28
 
         currentEventSequence = currentEventSequence.concat(shuffleArray([...eventsByStage.forest]).slice(0, Math.min(eventsByStage.forest.length, numForestEvents)));
         currentEventSequence = currentEventSequence.concat(shuffleArray([...eventsByStage.path]).slice(0, Math.min(eventsByStage.path.length, numPathEvents)));
         currentEventSequence = currentEventSequence.concat(shuffleArray([...eventsByStage.slope]).slice(0, Math.min(eventsByStage.slope.length, numSlopeEvents)));
 
+        // console.log("Total events after main stages:", currentEventSequence.length); // 應該是 1 (intro) + 28 = 29
         currentEventSequence.push(eventsByStage.climax[0]); // 加入結尾事件 (到達山頂前)
 
         sequenceIndex = 0; // 重設事件索引
@@ -683,7 +685,7 @@
 
                 // 體力顯示 (值 + 迷你條)
                 const staminaDisplay = document.createElement('div');
-                staminaDisplay.className = 'flex items-center text-xs w-[100px]'; // 增加寬度以加長體力條
+                staminaDisplay.className = 'flex items-center text-xs w-[70px]'; // 再縮短體力條寬度
                 const staminaVal = document.createElement('span');
                 staminaVal.className = `mr-1 w-5 text-right ${student.stamina > (INITIAL_STAMINA * 0.3) ? 'text-gray-700' : 'text-red-600 font-medium'}`;
                 staminaVal.textContent = student.stamina; // 使用 0.3 常數
@@ -700,8 +702,7 @@
 
                 // 水分顯示 (值 + 迷你條)
                 const waterDisplay = document.createElement('div');
-                waterDisplay.className = 'flex items-center text-xs w-[70px]'; // 固定寬度以對齊
-                waterDisplay.className = 'flex items-center text-xs w-[100px]'; // 增加寬度以加長水分條
+                waterDisplay.className = 'flex items-center text-xs w-[70px]'; // 再縮短水分條寬度
                 const waterVal = document.createElement('span');
                 waterVal.className = `mr-1 w-5 text-right ${student.water > (INITIAL_WATER * 0.3) ? 'text-gray-700' : 'text-red-600 font-medium'}`;
                 waterVal.textContent = student.water; // 使用 0.3 常數
@@ -803,7 +804,7 @@
     const teacherNameRegex = new RegExp(escapeRegExp(teacherName), 'g');
     let formattedText = text.replace(
         teacherNameRegex,
-        `<span class="text-blue-600 font-bold">${teacherName}</span>` // 將 text-emerald-700 改為 text-blue-600
+        `<span class="text-gray-800 font-bold">${teacherName}</span>` // Changed to text-gray-800 for #1F2937
     );
 
     // 以下逻辑跟你原来的一样，只把 formattedText 当作初始字符串继续处理
@@ -825,17 +826,17 @@
 
     if (hasS1) {
         formattedText = formattedText.replace(/\[studentName1\]/g,
-            `<span class="text-blue-600 font-semibold">${name1}</span>`);
+            `<span class="text-gray-800 font-semibold">${name1}</span>`); // Changed to text-gray-800
         actualNamesUsed.push(name1);
     }
     if (hasS2) {
         formattedText = formattedText.replace(/\[studentName2\]/g,
-            `<span class="text-blue-600 font-semibold">${name2}</span>`);
+            `<span class="text-gray-800 font-semibold">${name2}</span>`); // Changed to text-gray-800
         actualNamesUsed.push(name2);
     }
     if (hasS) {
         formattedText = formattedText.replace(/\[studentName\]/g,
-            `<span class="text-blue-600 font-semibold">${name1}</span>`);
+            `<span class="text-gray-800 font-semibold">${name1}</span>`); // Changed to text-gray-800
         actualNamesUsed.push(name1);
     }
 
