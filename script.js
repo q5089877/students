@@ -803,7 +803,7 @@
     const teacherNameRegex = new RegExp(escapeRegExp(teacherName), 'g');
     let formattedText = text.replace(
         teacherNameRegex,
-        `<span class="text-emerald-700 font-bold">${teacherName}</span>`
+        `<span class="text-blue-600 font-bold">${teacherName}</span>` // 將 text-emerald-700 改為 text-blue-600
     );
 
     // 以下逻辑跟你原来的一样，只把 formattedText 当作初始字符串继续处理
