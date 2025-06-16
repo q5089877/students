@@ -1,7 +1,7 @@
 (function() { // IIFE Start
     // 遊戲變數初始化
-    const INITIAL_STAMINA = 70; // 全班共享體力值上限及初始值
-    const INITIAL_WATER = 70; // 全班共享水分值上限及初始值
+    const INITIAL_STAMINA = 65; // 全班共享體力值上限及初始值
+    const INITIAL_WATER = 65; // 全班共享水分值上限及初始值
     const PER_TURN_STAMINA_COST = 2; // 每回合固定消耗體力 (此處未按要求修改，僅修改水分)
     const PER_TURN_WATER_COST = 1;   // 每回合固定消耗水分 (per active student) - 已修改為 1
 
@@ -839,7 +839,7 @@
 
 
     // 新增：顯示照片解鎖通知
-    function showPhotoUnlockNotification(photoPath, photoFilename) {
+    function showPhotoUnlockNotification(photoPath, photoFilename, playSoundEffect = true) {
         if (unlockedPhotoImg && photoUnlockPopup && unlockedPhotoName) {
             unlockedPhotoImg.src = photoPath;
             unlockedPhotoName.textContent = photoFilename;
@@ -847,7 +847,9 @@
             photoUnlockPopup.classList.add('flex');
             photoUnlockPopup.classList.remove('opacity-0'); // 移除透明
             photoUnlockPopup.classList.add('opacity-100');  // 設置為完全可見 (配合 transition-opacity)
-            playSound(audioItemPickup); // 可以重用物品拾取音效或新增專用音效
+            if (playSoundEffect) {
+                playSound(audioItemPickup); // 可以重用物品拾取音效或新增專用音效
+            }
         }
     }
 
@@ -998,6 +1000,8 @@
         let outcomeZusatz = ""; // Additional text for outcome if students faint
         let waterBottleRecipientName = null; // To store the name of the student who got a water bottle and immediate bonus
 
+        const willWinNext = (sequenceIndex + 1) >= currentEventSequence.length;
+
         playSound(audioClick); // 選項按鈕點擊音效放在最前面
         eventTextElem.innerHTML = ''; // 問題消失
 
@@ -1109,13 +1113,16 @@
             console.log(`協作分數增加: ${selectedOption.collaborationPointsAwarded}, 總分: ${totalCollaborationScore}`);
         }
 
-        // 根據體力/水分變化，為事件文本添加動畫效果和音效
-        if (selectedOption.staminaChange > 0 || selectedOption.waterChange > 0) {
-            eventTextElem.classList.add('animate-bounce-text');
-            playSound(audioPositive); // 正面效果音效
-        } else if (selectedOption.staminaChange < 0 || selectedOption.waterChange < 0) {
-            eventTextElem.classList.add('animate-shake-text');
-            playSound(audioNegative); // 負面效果音效
+        // Only play outcome-related sounds and animations if not winning immediately after this option
+        if (!willWinNext) {
+            // 根據體力/水分變化，為事件文本添加動畫效果和音效
+            if (selectedOption.staminaChange > 0 || selectedOption.waterChange > 0) {
+                eventTextElem.classList.add('animate-bounce-text');
+                playSound(audioPositive); // 正面效果音效
+            } else if (selectedOption.staminaChange < 0 || selectedOption.waterChange < 0) {
+                eventTextElem.classList.add('animate-shake-text');
+                playSound(audioNegative); // 負面效果音效
+            }
         }
 
         updateUI(); // 更新 UI 顯示
@@ -1123,8 +1130,9 @@
         // 禁用所有選項按鈕，防止重複點擊
         Array.from(optionsArea.children).forEach(button => button.disabled = true);
 
-        // 物品拾取音效 (如果在 giveItem 後播放，確保它在正面/負面音效之前或之後，避免衝突)
-        if (selectedOption.giveItem && selectedOption.giveItem.length > 0) {
+        // 物品拾取音效 (如果在 giveItem 後播放)
+        // Only play if not winning and item was given
+        if (!willWinNext && selectedOption.giveItem && selectedOption.giveItem.length > 0) {
             playSound(audioItemPickup);
         }
 
@@ -1153,10 +1161,10 @@
             // 遊戲勝利
             playSound(audioGameWin);
 
-            // 1. 優先顯示通關圖片 (end.jpg)
+            // 1. 優先顯示通關圖片 (end.jpg) - suppress its item pickup sound
             //    這裡會使用現有的照片解鎖彈窗來顯示圖片。
             //    圖片下方的文字可以自訂，例如 "通關紀念！"
-            showPhotoUnlockNotification(PHOTO_BASE_PATH + "end.jpg", "通關紀念！");
+            showPhotoUnlockNotification(PHOTO_BASE_PATH + "end.jpg", "通關紀念！", false);
 
             // 2. 準備並顯示原本的文字版勝利彈窗。
             //    這個彈窗會被圖片彈窗覆蓋，關閉圖片彈窗後即可見。
