@@ -77,16 +77,21 @@
     <div id="gamePlayScreen" class="hidden flex flex-col md:flex-row items-start justify-center p-4 md:p-6 gap-4 md:gap-6 h-full w-full max-w-screen-xl">
 
         <!-- 左側主遊戲區域 -->
-        <div id="mainGameArea" class="w-full md:w-3/5 lg:w-2/3 bg-slate-50 bg-opacity-90 p-4 md:p-6 rounded-xl shadow-xl flex flex-col items-center max-h-[90vh] overflow-y-auto">
-            <!-- 進度條和當前關卡 -->
-            <div class="w-full mb-3">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="text-lg font-semibold text-gray-700">關卡進度</span>
-                    <span id="stageProgressText" class="text-sm font-medium text-purple-600">0 / 0</span>
+        <div id="mainGameArea" class="w-full md:w-3/5 lg:w-2/3 bg-slate-50 bg-opacity-90 p-4 md:p-6 rounded-xl shadow-xl flex flex-col items-center max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <!-- Combined Row for Progress Info and Student Status -->
+            <div class="w-full flex justify-between items-baseline mb-1">
+                <div>
+                    <span class="text-lg font-semibold text-gray-700">關卡進度: </span>
+                    <span id="stageProgressText" class="text-lg font-semibold text-purple-600">0 / 0</span>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-2.5 relative" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                    <div id="stageProgressBar" class="resource-bar-fill h-full bg-purple-500 rounded-full"></div>
+                <div>
+                    <span id="studentStatusText" class="text-lg font-semibold text-purple-600">存活學生: 0/0</span>
                 </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 relative" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                <div id="stageProgressBar" class="resource-bar-fill h-full bg-purple-500 rounded-full"></div>
             </div>
             <p id="progressText" class="text-xl md:text-2xl font-bold text-gray-800 mb-4 text-center"></p>
 
@@ -112,22 +117,42 @@
                 </div>
             </div>
 
-            <!-- 學生狀態顯示 (總覽) -->
-            <div class="mb-4 w-full">
-                <p id="studentStatusText" class="text-md text-gray-700 text-center"></p>
-            </div>
-
             <!-- 物品欄顯示 -->
             <div class="mb-4 w-full text-left bg-slate-100 bg-opacity-80 p-3 rounded-xl shadow-md">
                 <h3 class="text-lg font-semibold text-gray-800 mb-2">物品欄🎒</h3>
-                <div id="inventoryDisplay" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    <div id="itemEnergyBar" class="item p-2 bg-yellow-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">能量棒🍫</div>
-                    <div id="itemSnack" class="item p-2 bg-orange-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">零食🍪</div>
-                    <div id="itemMap" class="item p-2 bg-green-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">地圖🗺️</div>
-                    <div id="itemInsectRepellent" class="item p-2 bg-teal-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">驅蟲劑🧴</div>
-                    <div id="itemSurvivalRope" class="item p-2 bg-indigo-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">求生繩🎗️</div>
-                    <div id="itemWaterBottle" class="item p-2 bg-blue-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">水瓶💧</div>
-                    <div id="itemFirstAidKit" class="item p-2 bg-red-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">急救包🩹</div>
+                <!-- 修改後的物品容器 -->
+                <div id="inventoryDisplay"
+                     class="flex flex-row space-x-3 p-2 bg-slate-200/60 rounded-md overflow-x-auto custom-scrollbar">
+                    <!--
+                        flex: 啟用 Flexbox
+                        flex-row: 設定主軸方向為橫向 (列)
+                        space-x-3: 在物品之間添加水平間距 (可調整)
+                        p-2 bg-slate-200/60 rounded-md: 容器本身的內邊距、背景和圓角
+                        overflow-x-auto: 如果物品總寬度超過容器，則顯示水平滾動條
+                        custom-scrollbar: 使用您已定義的自訂滾動條樣式
+                    -->
+                    <div id="itemEnergyBar" title="能量棒🍫" class="item flex-shrink-0 w-27h-10 bg-yellow-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">能量棒🍫</div>
+                    <div id="itemSnack" title="零食🍪" class="item flex-shrink-0 w-27h-10 bg-orange-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">零食🍪</div>
+                    <div id="itemMap" title="地圖🗺️" class="item flex-shrink-0 w-27h-10 bg-green-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">地圖🗺️</div>
+                    <div id="itemInsectRepellent" title="驅蟲劑🧴" class="item flex-shrink-0 w-27h-10 bg-teal-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">驅蟲劑🧴</div>
+                    <div id="itemSurvivalRope" title="求生繩索🎗️" class="item flex-shrink-0 w-27h-10 bg-indigo-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">求生繩🎗️</div>
+                    <div id="itemWaterBottle" title="水瓶💧" class="item flex-shrink-0 w-27h-10 bg-blue-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">水瓶💧</div>
+                    <div id="itemFirstAidKit" title="急救包🩹" class="item flex-shrink-0 w-27h-10 bg-red-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">急救包🩹</div>
+                    <!--
+                        對於每個物品 (item):
+                        flex-shrink-0: 防止物品在空間不足時被壓縮
+                        w-20 h-20: 設定固定的寬度和高度 (可調整以適應內容，例如 text-3xl 的 emoji)
+                        bg-*: 保留各自的背景顏色
+                        rounded-lg shadow-sm: 保留圓角和陰影
+                        flex items-center justify-center: 使 emoji 在格子內居中顯示
+                        text-3xl text-gray-700: 保留文字大小和顏色
+                        cursor-default: 由於物品本身不可點擊，設置默認鼠標樣式
+                        transform transition hover:scale-105: 保留原有的 hover 放大效果和過渡
+                        title 屬性是為了滑鼠懸停時顯示物品名稱，script.js 中 ITEMS.name 已經定義了名稱，
+                        這裡的 title 只是 HTML 層面的提示，可以與 JS 中的定義保持一致或按需調整。
+                        script.js 會根據物品是否擁有來切換 'opacity-50' class，並在獲得時添加 'animate-pulse-item' class。
+                        這些 JavaScript 的行為將繼續正常運作。
+                    -->
                 </div>
             </div>
 

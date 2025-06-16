@@ -14,11 +14,11 @@
     const LOW_STUDENT_RESOURCE_THRESHOLD_PERCENT = 30;  // 學生單項資源低閾值百分比
 
     // 持續時間設定 (毫秒)
-    const OUTCOME_DISPLAY_DURATION_MS = 3000; // 顯示結果後等待的時間
+    const OUTCOME_DISPLAY_DURATION_MS = 3200; // 顯示結果後等待的時間
     const ITEM_PULSE_ANIMATION_MS = 800;      // 物品獲得時的脈衝動畫時間
 
     // 物品效果數值
-    const WATER_BOTTLE_RECOVERY_AMOUNT = 10; // 獲得水瓶時恢復的水量
+    const WATER_BOTTLE_RECOVERY_AMOUNT = 12; // 獲得水瓶時恢復的水量
     const teacherName = "賴冠儒老師"; // 老師的名字
     // 六年四班的學生名單
     const studentNames = [
@@ -621,18 +621,10 @@
             // Display number of active students
             const activeStudentCount = students.filter(s => s.active).length;
             const totalStudentCount = students.length;
-            let studentStatusText = `存活學生: ${activeStudentCount}/${totalStudentCount}`;
-            const statusElement = document.getElementById('studentStatusText'); // Assuming you add an element with this ID
+            const studentStatusTextContent = `存活學生: ${activeStudentCount}/${totalStudentCount}`;
+            const statusElement = document.getElementById('studentStatusText');
             if (statusElement) {
-                statusElement.textContent = studentStatusText;
-            } else {
-                // Create and append if it doesn't exist (simple version)
-                const newStatusElement = document.createElement('p');
-                newStatusElement.id = 'studentStatusText';
-                newStatusElement.className = 'text-sm text-gray-600 dark:text-gray-300 mt-1 text-center';
-                newStatusElement.textContent = studentStatusText;
-                // Append it somewhere logical, e.g., after progressTextElem or waterBarElem's parent
-                progressTextElem.parentNode.insertBefore(newStatusElement, progressTextElem.nextSibling);
+                statusElement.textContent = studentStatusTextContent;
             }
         } else {
              stageProgressTextElem.textContent = "0 / 0";
