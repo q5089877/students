@@ -658,6 +658,7 @@
                 // 使用 flex 讓姓名和體力/水分水平排列
                 studentDiv.className = `p-2 rounded-md shadow-sm flex items-center space-x-2 ${student.active ? 'bg-green-100' : 'bg-red-100 opacity-75'}`;
 
+
                 const nameElem = document.createElement('p');
                 studentDiv.appendChild(nameElem);
                 // 將字體調整為 text-base 以獲得更好的可讀性
@@ -720,7 +721,7 @@
                 studentListArea.appendChild(activeSection);
 
                 if (activeStudentsDisplay.length > 0) {
-                    shuffleArray([...activeStudentsDisplay]).forEach(student => {
+                    activeStudentsDisplay.sort(sortByTotalResource).forEach(student => {
                         activeContainer.appendChild(createStudentElement(student));
                     });
                 } else {
@@ -745,7 +746,7 @@
                 inactiveSection.appendChild(inactiveContainer);
                 studentListArea.appendChild(inactiveSection);
 
-                inactiveStudentsDisplay.forEach(student => {
+                inactiveStudentsDisplay.sort(sortByTotalResource).forEach(student => {
                     inactiveContainer.appendChild(createStudentElement(student));
                 });
 
@@ -761,11 +762,18 @@
                 singleSection.appendChild(container);
                 studentListArea.appendChild(singleSection);
 
-                shuffleArray([...activeStudentsDisplay]).forEach(student => {
+                activeStudentsDisplay.sort(sortByTotalResource).forEach(student => {
                     container.appendChild(createStudentElement(student));
                 });
             }
         }
+    }
+
+        // 輔助函數：根據體力+水分總和排序學生 (降冪)
+    function sortByTotalResource(studentA, studentB) {
+        const totalA = studentA.stamina + studentA.water;
+        const totalB = studentB.stamina + studentB.water;
+        return totalA - totalB; // 降冪排序 (總和高的在前)
     }
 
     // 輔助函數：格式化包含學生姓名的文字
@@ -1006,17 +1014,22 @@
         }
 
         let affectedStudentList = [];
+        const outcomeTextResultForScope = formatTextWithStudentNames(selectedOption.outcomeText, selectedOption.numStudents || (selectedOption.outcomeText.includes("[studentName2]") ? 2 : (selectedOption.outcomeText.includes("[studentName1]") || selectedOption.outcomeText.includes("[studentName]") ? 1 : 0)));
+        const namesFromOutcome = outcomeTextResultForScope.namesUsed; // 從結果文字中提取的學生姓名
+        const namesFromOptionButton = namesInOptionText; // 從選項按鈕文字中提取的學生姓名 (作為參數傳入)
+
         // Determine scope of effect
-        if (selectedOption.effectScope === 'all_active' || selectedOption.outcomeText.includes("全班") || selectedOption.outcomeText.includes("大家")) {
+        if (selectedOption.effectScope === 'all_active' || outcomeTextResultForScope.formattedText.includes("全班") || outcomeTextResultForScope.formattedText.includes("大家")) {
             affectedStudentList = students.filter(s => s.active);
-        } else if (namesInOptionText && namesInOptionText.length > 0) {
-            affectedStudentList = namesInOptionText
+        } else if (namesFromOutcome && namesFromOutcome.length > 0) { // 優先使用結果文字中提到的學生
+            affectedStudentList = namesFromOutcome
                 .map(name => students.find(s => s.name === name && s.active))
                 .filter(Boolean); // Filter out undefined if a name wasn't found or student inactive
+        } else if (namesFromOptionButton && namesFromOptionButton.length > 0) { // 其次使用選項按鈕文字中提到的學生
+            affectedStudentList = namesFromOptionButton
+                .map(name => students.find(s => s.name === name && s.active))
+                .filter(Boolean); // 過濾掉未找到或不活躍的學生
         } else {
-            // If no specific students in option and not class-wide, maybe affect one random active student or no one for stats
-            // For now, let's assume if namesInOptionText is empty and not 'all_active', it might be a general outcome with no specific student stat change unless specified.
-            // Or, if the event text had a student, use that one. This part needs careful event design.
             // As a fallback, if there are changes but no clear target, apply to one random active student.
             if ((selectedOption.staminaChange !== 0 || selectedOption.waterChange !== 0) && students.filter(s => s.active).length > 0) {
                  const randomActiveStudent = students.filter(s => s.active)[Math.floor(Math.random() * students.filter(s => s.active).length)];
@@ -1028,7 +1041,8 @@
             student.stamina = Math.min(INITIAL_STAMINA, Math.max(0, student.stamina + selectedOption.staminaChange));
             student.water = Math.min(INITIAL_WATER, Math.max(0, student.water + selectedOption.waterChange));
             console.log(`選項結果後 - ${student.name}: 體力=${student.stamina}, 水分=${student.water}`); // 新增 log
-            if (!student.active) return; // Already fainted this turn or previous
+            // Check if student fainted *after* applying option changes, but only if they were active before this option
+            if (!student.active && !(student.stamina === 0 || student.water === 0)) return; // If already inactive and not due to this option, skip.
             if (student.stamina === 0 || student.water === 0) {
                 student.active = false;
                 outcomeZusatz += `\n${student.name} 精疲力盡倒下了！`;
