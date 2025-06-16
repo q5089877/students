@@ -28,14 +28,20 @@
 
     // 照片相關設定 (如果沒有 config.js，則定義於此)
     const PHOTO_BASE_PATH = "images/life_photos/";
-    const ALL_PHOTO_FILENAMES = [
-        // 示例，您需要填寫完整的照片檔名列表 (photo_001.jpg 到 photo_204.jpg)
-        "photo_001.jpg", "photo_002.jpg", "photo_003.jpg", "photo_004.jpg", "photo_005.jpg",
-        "photo_006.jpg", "photo_007.jpg", "photo_008.jpg", "photo_009.jpg", "photo_010.jpg",
-        // ... 請務必補全所有 204 個照片檔名
-        "photo_204.jpg"
-    ];
+
+    // 輔助函數生成照片檔名
+    function generatePhotoFilenames(count) {
+        const filenames = [];
+        for (let i = 1; i <= count; i++) {
+            filenames.push(`photo_${String(i).padStart(3, '0')}.jpg`);
+        }
+        return filenames;
+    }
+    const ALL_PHOTO_FILENAMES = generatePhotoFilenames(204); // 生成 photo_001.jpg 到 photo_204.jpg
     let unlockedPhotos = new Set(); // 用來儲存已解鎖照片的識別碼
+    let totalCollaborationScore = 0; // 新增：全班協作總分
+    let photosUnlockedThisSession = 0; // 新增：本局遊戲已透過協作解鎖的照片數量
+    const POINTS_PER_PHOTO = 10; // 修改：每解鎖一張照片所需的協作點數 (調整為10)
 
     // 集中管理物品定義
     const ITEMS = {
@@ -143,7 +149,7 @@
                 stage: "山腳下的迷霧森林 🌳",
                 text: "灌木叢中隱約看見一個閃閃發光的寶箱！要打開嗎？📦✨",
                 options: [
-                    { text: "小心翼翼地打開寶箱，看看裡面有什麼。", staminaChange: 10, waterChange: 5, outcomeText: `寶箱裡裝滿了能量棒🍫和一瓶清涼的山泉水💧！真是意外之喜！發現寶箱的同學精神一振！${teacherName}：「看來冒險還是有回報的！」`, giveItem: ['energyBar', 'waterBottle'], unlocksPhoto: true, effectScope: 'all_active' }, // Let's say finding it boosts everyone a bit
+                    { text: "小心翼翼地打開寶箱，看看裡面有什麼。", staminaChange: 10, waterChange: 5, outcomeText: `寶箱裡裝滿了能量棒🍫和一瓶清涼的山泉水💧！真是意外之喜！發現寶箱的同學精神一振！${teacherName}：「看來冒險還是有回報的！」`, giveItem: ['energyBar', 'waterBottle'], collaborationPointsAwarded: 5, effectScope: 'all_active' }, // 獎勵協作分數
                     { text: "寶箱可能有陷阱！還是別碰比較好。", staminaChange: -5, waterChange: 0, outcomeText: `寶箱消失了。什麼都沒發生，但大家有點失望。😶` }
                 ]
             },
@@ -160,8 +166,8 @@
                 stage: "山腳下的迷霧森林 🌳",
                 text: "一群調皮的猴子🐒突然跳出來，對著大家吱吱叫，還想搶走 [studentName] 的背包！",
                 options: [
-                    { text: "趕快大聲驅趕猴子！🗣️", staminaChange: -12, waterChange: -5, outcomeText: `猴子嚇了一跳跑掉了，但 [studentName] 和幫忙驅趕的同學也因此耗費了點力氣。💦` }, // Affects involved
-                    { text: "拿出零食🍪丟給猴子，分散牠們的注意力。", staminaChange: 8, waterChange: 0, outcomeText: `猴子們開心地吃著零食，大家趁機溜走了！😇 使用零食的 [studentName] 感到輕鬆不少，全班同學也鬆了一口氣！`, requiredItem: 'snack', consumeItem: 'snack', unlocksPhoto: true, effectScope: 'all_active' } // Student gets a boost, class gets a smaller one or just relief
+                    { text: "趕快大聲驅趕猴子！🗣️", staminaChange: -12, waterChange: -5, outcomeText: `猴子嚇了一跳跑掉了，但 [studentName] 和幫忙驅趕的同學也因此耗費了點力氣。💦`, collaborationPointsAwarded: 2 }, // 獎勵協作分數
+                    { text: "拿出零食🍪丟給猴子，分散牠們的注意力。", staminaChange: 8, waterChange: 0, outcomeText: `猴子們開心地吃著零食，大家趁機溜走了！😇 使用零食的 [studentName] 感到輕鬆不少，全班同學也鬆了一口氣！`, requiredItem: 'snack', consumeItem: 'snack', collaborationPointsAwarded: 5, effectScope: 'all_active' } // 獎勵協作分數
                 ],
                 needsStudent: true
             },
@@ -185,8 +191,8 @@
                 stage: "山腳下的迷霧森林 🌳",
                 text: "一隻小動物被捕獸夾困住了，發出痛苦的哀嚎。救還是不救？🥺",
                 options: [
-                    { text: "小心地解救小動物。❤️", staminaChange: -15, waterChange: -8, outcomeText: `雖然耗費了體力，但成功解救了小動物，參與救援的同學感到非常欣慰。` },
-                    { text: "使用急救包🩹，為小動物處理傷口後放生。", staminaChange: 10, waterChange: 0, outcomeText: `小動物感激地離開，你們的善舉讓參與的同學士氣大振！`, requiredItem: 'firstAidKit', consumeItem: 'firstAidKit', unlocksPhoto: true }
+                    { text: "小心地解救小動物。❤️", staminaChange: -15, waterChange: -8, outcomeText: `雖然耗費了體力，但成功解救了小動物，參與救援的同學感到非常欣慰。`, collaborationPointsAwarded: 3 },
+                    { text: "使用急救包🩹，為小動物處理傷口後放生。", staminaChange: 10, waterChange: 0, outcomeText: `小動物感激地離開，你們的善舉讓參與的同學士氣大振！`, requiredItem: 'firstAidKit', consumeItem: 'firstAidKit', collaborationPointsAwarded: 8 }
                 ]
             },
             // 環境/地形類事件
@@ -262,7 +268,7 @@
                 stage: "蜿蜒的山腰小徑 🚶‍♀️",
                 text: "前方突然出現一棵倒塌的大樹🪵，擋住了整條路！怎麼辦？",
                 options: [
-                    { text: "全班一起合作，試著把樹枝推開！💪", staminaChange: -10, waterChange: -7, outcomeText: `大家齊心協力，雖然每個人都費了些力氣，但成功清開了道路！🤝`, unlocksPhoto: true, effectScope: 'all_active' },
+                    { text: "全班一起合作，試著把樹枝推開！💪", staminaChange: -10, waterChange: -7, outcomeText: `大家齊心協力，雖然每個人都費了些力氣，但成功清開了道路！🤝`, collaborationPointsAwarded: 10, effectScope: 'all_active' },
                     { text: "找找看有沒有繞道的小路。迂迴而行。", staminaChange: -12, waterChange: -8, outcomeText: `雖然繞過了倒樹，但多走了不少冤枉路，每個人的體力水分都消耗不少。😅`, effectScope: 'all_active' },
                     { text: "使用求生繩索🎗️，嘗試固定大樹，開闢安全通道。", staminaChange: 10, waterChange: 0, outcomeText: `利用求生繩索巧妙地固定住大樹，大家安全通過！使用繩索的同學省下了不少力氣。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope' }
                 ]
@@ -272,7 +278,7 @@
                 text: "一條湍急的河流擋住了去路！河水看起來很深，沒有橋。🌊",
                 options: [
                     { text: "尋找淺水處，小心涉水過河。", staminaChange: -20, waterChange: -15, outcomeText: `大家小心翼翼地過河，雖然沒有危險，但被冰冷的河水凍得每個人的體力水分大減。🥶`, effectScope: 'all_active' },
-                    { text: "使用求生繩索🎗️，搭建臨時的過河通道！", staminaChange: 12, waterChange: 0, outcomeText: `利用繩索成功搭建了安全通道，大家輕鬆過河！使用繩索的同學體力甚至有所恢復。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope', unlocksPhoto: true }
+                    { text: "使用求生繩索🎗️，搭建臨時的過河通道！", staminaChange: 12, waterChange: 0, outcomeText: `利用繩索成功搭建了安全通道，大家輕鬆過河！使用繩索的同學體力甚至有所恢復。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope', collaborationPointsAwarded: 8 }
                 ]
             },
             {
@@ -340,7 +346,7 @@
                 stage: "蜿蜒的山腰小徑 🚶‍♀️",
                 text: `一位老山神📚現身，祂說：「想通過此路，需回答我的問題！」${teacherName}：「同學們，這是考驗我們智慧的時候！」`,
                 options: [
-                    { text: `${teacherName}：「請問六年四班總共有幾位同學？」(答28)`, staminaChange: 15, waterChange: 5, outcomeText: `答案是28位同學！山神點頭稱讚，並贈予清涼山泉！✨ 全班同學體力水分增加！`, unlocksPhoto: true, effectScope: 'all_active' },
+                    { text: `${teacherName}：「請問六年四班總共有幾位同學？」(答28)`, staminaChange: 15, waterChange: 5, outcomeText: `答案是28位同學！山神點頭稱讚，並贈予清涼山泉！✨ 全班同學體力水分增加！`, collaborationPointsAwarded: 10, effectScope: 'all_active' },
                     { text: `${teacherName}：「在野外食物中毒，第一時間該怎麼辦？」(答催吐/求助)`, staminaChange: 15, waterChange: 5, outcomeText: `正確答案是催吐並尋求幫助！山神滿意點頭，贈予補給品！✨ 全班同學體力水分增加！`, effectScope: 'all_active' },
                     { text: `${teacherName}：「野外迷路時，看到什麼不該碰？」(答毒菇/奇怪的果實)`, staminaChange: 15, waterChange: 5, outcomeText: `正確！遠離不明動植物是野外求生基本原則！山神贈予補給！✨ 全班同學體力水分增加！`, effectScope: 'all_active' },
                     { text: "隨便猜一個！", staminaChange: -20, waterChange: -10, outcomeText: `答錯了…山神嘆了口氣，給了大家一個小小的懲罰。😔 全班同學體力水分下降！某同學：「下次要好好讀書了！」`, effectScope: 'all_active' }
@@ -374,7 +380,7 @@
                     { text: `仔細規劃路線，利用 ${teacherName} 教的攀爬技巧。`, staminaChange: -20, waterChange: -10, outcomeText: `大家憑藉著毅力和聰明才智，一步步克服了岩壁！🙌 但每個人的體力水分都消耗不小！`, effectScope: 'all_active' },
                     { text: "試圖強行突破，看看能不能爬上去！", staminaChange: -30, waterChange: -15, outcomeText: `嘗試強攻岩壁失敗，反而耗費了大量體力水分，還差點有人受傷！😬 參與強攻的同學尤其疲憊。` },
                     { text: "吃下能量棒🍫，補充體力再攀爬！", staminaChange: 12, waterChange: 0, outcomeText: `能量棒讓吃下的同學精神大振！攀爬變得輕鬆許多，體力大幅恢復。`, requiredItem: 'energyBar', consumeItem: 'energyBar' },
-                    { text: "使用求生繩索🎗️，搭建臨時攀爬點！", staminaChange: 15, waterChange: 0, outcomeText: `利用繩索，大家迅速建立了安全攀爬點，輕鬆通過！使用繩索的同學感到非常有用。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope', unlocksPhoto: true }
+                    { text: "使用求生繩索🎗️，搭建臨時攀爬點！", staminaChange: 15, waterChange: 0, outcomeText: `利用繩索，大家迅速建立了安全攀爬點，輕鬆通過！使用繩索的同學感到非常有用。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope', collaborationPointsAwarded: 8 }
                 ]
             },
             {
@@ -435,7 +441,7 @@
                 stage: "陡峭的試煉之坡 🧗",
                 text: "遇到一位同樣在爬山，但嚴重脫水的老爺爺！他看起來非常虛弱。👴💧",
                 options: [
-                    { text: "將水瓶💧裡的水分給老爺爺。", staminaChange: -5, waterChange: -20, outcomeText: `老爺爺恢復了精神，並感謝你們！分享水瓶的同學雖然水分大減，但助人為樂讓其心靈得到慰藉。😊`, requiredItem: 'waterBottle', consumeItem: 'waterBottle', unlocksPhoto: true },
+                    { text: "將水瓶💧裡的水分給老爺爺。", staminaChange: -5, waterChange: -20, outcomeText: `老爺爺恢復了精神，並感謝你們！分享水瓶的同學雖然水分大減，但助人為樂讓其心靈得到慰藉。😊`, requiredItem: 'waterBottle', consumeItem: 'waterBottle', collaborationPointsAwarded: 10 },
                     { text: "很抱歉，我們的水也不多了…", staminaChange: -10, waterChange: 0, outcomeText: `老爺爺無奈地離開，大家感到一陣內疚，每個人的體力都微幅下降。😔`, effectScope: 'all_active' }
                 ]
             },
@@ -478,7 +484,7 @@
                 stage: "陡峭的試煉之坡 🧗",
                 text: "一隻看似睿智的老貓頭鷹🦉停在樹上，牠說：「年輕的登山者啊，若想通過，請回答我的謎題：『身體是黑的，心卻是紅的，是什麼？』」",
                 options: [
-                    { text: "答案是：西瓜！🍉", staminaChange: 15, waterChange: 8, outcomeText: `答對了！老貓頭鷹滿意地點點頭，一束光芒指引了前進的道路！✨ 全班同學體力水分大幅增加！`, unlocksPhoto: true, effectScope: 'all_active' },
+                    { text: "答案是：西瓜！🍉", staminaChange: 15, waterChange: 8, outcomeText: `答對了！老貓頭鷹滿意地點點頭，一束光芒指引了前進的道路！✨ 全班同學體力水分大幅增加！`, collaborationPointsAwarded: 10, effectScope: 'all_active' },
                     { text: `答案是：黑森林蛋糕！🍰 (${teacherName}：「別鬧了！」)`, staminaChange: -20, waterChange: -10, outcomeText: `老貓頭鷹嘆了口氣，大家因此受到了一點考驗，每個人的體力水分都下降。😔 某同學：「我好想吃蛋糕…」`, effectScope: 'all_active' }
                 ]
             }
@@ -488,7 +494,7 @@
                 stage: "風光無限的山頂 ⛰️",
                 text: `最後一段路了！大家都感到非常疲憊，但山頂就在眼前！${teacherName}：「堅持住！我們快到了！」`,
                 options: [
-                    { text: "全員衝刺，向山頂進發！", staminaChange: 15, waterChange: 10, outcomeText: `全班同學互相加油打氣，爆發出最後的能量！💪 成功登頂！`, effectScope: 'all_active' }
+                    { text: "全員衝刺，向山頂進發！", staminaChange: 15, waterChange: 10, outcomeText: `全班同學互相加油打氣，爆發出最後的能量！💪 成功登頂！`, collaborationPointsAwarded: 15, effectScope: 'all_active' }
                 ]
             }
         ]
@@ -628,8 +634,11 @@
         if (studentListContainer) {
             studentListContainer.innerHTML = ''; // 清空現有列表
 
-            // 對學生列表進行隨機排序以供顯示
-            const shuffledStudents = shuffleArray([...students]);
+            // 將學生分為活躍和不活躍兩組，然後合併，不活躍的在下面
+            const activeStudentsDisplay = students.filter(student => student.active);
+            const inactiveStudentsDisplay = students.filter(student => !student.active);
+            // 可以選擇對活躍學生列表進行隨機排序
+            const shuffledStudents = shuffleArray([...activeStudentsDisplay]).concat(inactiveStudentsDisplay);
 
             shuffledStudents.forEach(student => {
                 const studentDiv = document.createElement('div');
@@ -638,8 +647,8 @@
 
                 const nameElem = document.createElement('p');
                 studentDiv.appendChild(nameElem);
-                // 將字體從 text-xs 改為 text-sm，並保持其他樣式
-                nameElem.className = `font-semibold text-sm flex-1 truncate ${student.active ? 'text-green-800' : 'text-red-800'}`;
+                // 將字體調整為 text-base 以獲得更好的可讀性
+                nameElem.className = `font-semibold text-base flex-1 truncate ${student.active ? 'text-green-800' : 'text-red-800'}`;
                 nameElem.textContent = student.name + (student.active ? '' : ' (倒)');
                 nameElem.title = student.name + (student.active ? '' : ' (已倒下)'); // Tooltip for full name
 
@@ -759,20 +768,39 @@
         }
     }
 
-    // 新增：添加已解鎖的照片邏輯
-    function addUnlockedPhoto() {
+    // 修改：此函數現在僅負責挑選並顯示一張隨機未解鎖照片的通知
+    // 它會被 checkAndUnlockPhotosBasedOnCollaboration 調用
+    function _unlockAndShowSpecificRandomPhoto() {
         const availablePhotos = ALL_PHOTO_FILENAMES.filter(filename => !unlockedPhotos.has(filename));
         if (availablePhotos.length > 0) {
             const photoToUnlock = availablePhotos[Math.floor(Math.random() * availablePhotos.length)];
             unlockedPhotos.add(photoToUnlock);
             console.log(`照片已解鎖: ${photoToUnlock}`);
             showPhotoUnlockNotification(PHOTO_BASE_PATH + photoToUnlock, photoToUnlock);
+            return true; // 表示成功解鎖並顯示了一張照片
         } else {
             console.log("所有照片都已解鎖！");
+            return false; // 表示沒有照片可解鎖
         }
     }
 
-    // 顯示當前事件
+    // 新增：根據協作分數檢查並解鎖照片
+    function checkAndUnlockPhotosBasedOnCollaboration() {
+        const potentialTotalUnlocksBasedOnScore = Math.floor(totalCollaborationScore / POINTS_PER_PHOTO);
+
+        if (potentialTotalUnlocksBasedOnScore > photosUnlockedThisSession) {
+            const numToUnlockNow = potentialTotalUnlocksBasedOnScore - photosUnlockedThisSession;
+            for (let i = 0; i < numToUnlockNow; i++) {
+                if (_unlockAndShowSpecificRandomPhoto()) {
+                    photosUnlockedThisSession++;
+                } else {
+                    break; // 如果沒有更多照片可解鎖，則停止
+                }
+            }
+        }
+    }
+
+        // 顯示當前事件
     function displayEvent() {
         outcomeTextElem.textContent = ''; // 清除上次的結果文字
         optionsArea.innerHTML = ''; // 清除上次的選項按鈕
@@ -899,11 +927,6 @@
             });
         }
 
-        // 處理照片解鎖
-        if (selectedOption.unlocksPhoto === true) {
-            addUnlockedPhoto();
-        }
-
         let affectedStudentList = [];
         // Determine scope of effect
         if (selectedOption.effectScope === 'all_active' || selectedOption.outcomeText.includes("全班") || selectedOption.outcomeText.includes("大家")) {
@@ -938,6 +961,12 @@
         const outcomeTextResult = formatTextWithStudentNames(selectedOption.outcomeText, numStudentsHintForOutcome);
         outcomeTextElem.textContent = outcomeTextResult.formattedText + outcomeZusatz; // 顯示事件結果
 
+        // 處理協作點數獎勵
+        if (selectedOption.collaborationPointsAwarded) {
+            totalCollaborationScore += selectedOption.collaborationPointsAwarded;
+            console.log(`協作分數增加: ${selectedOption.collaborationPointsAwarded}, 總分: ${totalCollaborationScore}`);
+        }
+
         // 根據體力/水分變化，為事件文本添加動畫效果和音效
         if (selectedOption.staminaChange > 0 || selectedOption.waterChange > 0) {
             eventTextElem.classList.add('animate-bounce-text');
@@ -961,6 +990,7 @@
         setTimeout(() => {
             sequenceIndex++; // 進入下一個事件
             const isGameOver = checkGameStatus(); // 檢查遊戲是否結束或勝利
+            if (!isGameOver) checkAndUnlockPhotosBasedOnCollaboration(); // 在顯示下個事件前，檢查是否解鎖照片
             if (!isGameOver) { // 如果遊戲未結束
                 displayEvent();
             }
@@ -999,6 +1029,8 @@
         initializeStudentStats(); // Resets all students' stamina, water, and active status
         initializeInventory(); // 重置物品欄
         initializeEventSequence(); // 重新初始化事件序列
+        totalCollaborationScore = 0; // 重置協作分數
+        photosUnlockedThisSession = 0; // 重置本局協作解鎖照片計數
         unlockedPhotos.clear(); // 重設遊戲時清空已解鎖照片
         outcomeTextElem.textContent = ''; // 清除結果文字
         // 隱藏彈出視窗並重設動畫類別

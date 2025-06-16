@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>六年四班 - 智慧山大冒險 (大照片彈窗版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        // For production, it's recommended to install Tailwind CSS: https://tailwindcss.com/docs/installation
+        tailwind.config = {
+            // darkMode: 'media', // Consistently bright theme
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-item': 'pulse-item-animation 0.8s ease-in-out',
+                        'shake-text': 'shake-text-animation 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                        'bounce-text': 'bounce-text-animation 0.6s ease-out',
+                    },
+                    keyframes: {
+                        'pulse-item-animation': {
+                            '0%, 100%': { transform: 'scale(1)', opacity: '1' },
+                            '50%': { transform: 'scale(1.1)', opacity: '0.7' },
+                        },
+                        'shake-text-animation': {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-3px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(3px, 0, 0)' },
+                        },
+                        'bounce-text-animation': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-8px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .resource-bar-fill { transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out; }
+        #studentListContainer::-webkit-scrollbar {
+            width: 8px;
+        }
+        #studentListContainer::-webkit-scrollbar-track {
+            background: #e9d5ff;
+            border-radius: 10px;
+        }
+        #studentListContainer::-webkit-scrollbar-thumb {
+            background: #a855f7;
+            border-radius: 10px;
+        }
+        #studentListContainer::-webkit-scrollbar-thumb:hover {
+            background: #9333ea;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-200 via-indigo-200 to-blue-200 text-gray-800 min-h-screen flex flex-col items-center justify-center p-4 selection:bg-purple-300 selection:text-purple-900">
+
+    <!-- 歡迎畫面 -->
+    <div id="welcomeScreen" class="text-center bg-white bg-opacity-80 p-8 rounded-xl shadow-xl max-w-lg w-full">
+        <h1 class="text-4xl font-bold text-purple-600 mb-4">六年四班的智慧山大冒險</h1>
+        <p class="text-lg text-gray-700 mb-6">
+            親愛的六年四班同學們，準備好和賴冠儒老師一起挑戰充滿驚奇與智慧的『智慧之山』了嗎？
+            這是一場考驗你們團結、勇氣與智慧的旅程。讓我們一起克服困難，創造屬於我們的回憶吧！
+        </p>
+        <button id="startButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition duration-300 ease-in-out hover:scale-105 active:scale-95 text-xl">
+            開始冒險！🚀
+        </button>
+    </div>
+
+    <!-- 遊戲主畫面 -->
+    <div id="gamePlayScreen" class="hidden flex flex-col md:flex-row items-start justify-center p-4 md:p-6 gap-4 md:gap-6 h-full w-full max-w-screen-xl">
+
+        <!-- 左側主遊戲區域 -->
+        <div id="mainGameArea" class="w-full md:w-3/5 lg:w-2/3 bg-slate-50 bg-opacity-90 p-4 md:p-6 rounded-xl shadow-xl flex flex-col items-center max-h-[90vh] overflow-y-auto">
+            <!-- 進度條和當前關卡 -->
+            <div class="w-full mb-3">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-lg font-semibold text-gray-700">關卡進度</span>
+                    <span id="stageProgressText" class="text-sm font-medium text-purple-600">0 / 0</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 relative" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                    <div id="stageProgressBar" class="resource-bar-fill h-full bg-purple-500 rounded-full"></div>
+                </div>
+            </div>
+            <p id="progressText" class="text-xl md:text-2xl font-bold text-gray-800 mb-4 text-center"></p>
+
+            <!-- 隊伍平均體力條顯示 -->
+            <div class="mb-3 w-full">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-md font-semibold text-gray-700">全班平均體力 💪</span>
+                    <span id="staminaValue" class="text-xl font-bold text-red-500"></span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3.5 relative" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                    <div id="staminaBar" class="resource-bar-fill h-full bg-green-400 rounded-full"></div>
+                </div>
+            </div>
+
+            <!-- 隊伍平均水分條顯示 -->
+            <div class="mb-3 w-full">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-md font-semibold text-gray-700">全班平均水分 💧</span>
+                    <span id="waterValue" class="text-xl font-bold text-blue-500"></span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3.5 relative" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                    <div id="waterBar" class="resource-bar-fill h-full bg-blue-400 rounded-full"></div>
+                </div>
+            </div>
+
+            <!-- 學生狀態顯示 (總覽) -->
+            <div class="mb-4 w-full">
+                <p id="studentStatusText" class="text-md text-gray-700 text-center"></p>
+            </div>
+
+            <!-- 物品欄顯示 -->
+            <div class="mb-4 w-full text-left bg-slate-100 bg-opacity-80 p-3 rounded-xl shadow-md">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">物品欄🎒</h3>
+                <div id="inventoryDisplay" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    <div id="itemEnergyBar" class="item p-2 bg-yellow-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">能量棒🍫</div>
+                    <div id="itemSnack" class="item p-2 bg-orange-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">零食🍪</div>
+                    <div id="itemMap" class="item p-2 bg-green-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">地圖🗺️</div>
+                    <div id="itemInsectRepellent" class="item p-2 bg-teal-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">驅蟲劑🧴</div>
+                    <div id="itemSurvivalRope" class="item p-2 bg-indigo-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">求生繩🎗️</div>
+                    <div id="itemWaterBottle" class="item p-2 bg-blue-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">水瓶💧</div>
+                    <div id="itemFirstAidKit" class="item p-2 bg-red-200 rounded-lg text-center shadow-sm transform transition hover:scale-105 text-gray-700">急救包🩹</div>
+                </div>
+            </div>
+
+            <!-- 事件文字 -->
+            <div class="my-4 p-4 bg-amber-100 bg-opacity-80 rounded-lg shadow-inner min-h-[100px] w-full">
+                <p id="eventText" class="text-md md:text-lg text-gray-700 leading-relaxed"></p>
+                <p id="outcomeText" class="mt-2 text-base text-gray-600 italic"></p>
+            </div>
+
+            <!-- 選項區域 -->
+            <div id="optionsArea" class="w-full grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- 選項按鈕會由 JavaScript 動態填入 -->
+            </div>
+        </div>
+
+        <!-- 右側學生狀態列表 -->
+        <div id="studentListArea" class="w-full md:w-2/5 lg:w-1/3 bg-slate-50 bg-opacity-90 p-4 rounded-xl shadow-xl max-h-[90vh] overflow-y-auto">
+            <h2 class="text-xl font-semibold text-gray-800 mb-3 text-center border-b pb-2 border-gray-300">全班狀態</h2>
+            <div id="studentListContainer" class="space-y-1.5 pr-1">
+                <!-- 學生狀態會由 JavaScript 動態填入 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 遊戲結束/勝利彈出視窗 -->
+    <div id="gameOverPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50 transition-opacity duration-300 ease-in-out opacity-0">
+        <div id="popupContent" class="bg-white p-8 rounded-xl shadow-2xl text-center max-w-md w-full transform transition-all duration-300 ease-in-out scale-90 opacity-0">
+            <h2 id="popupTitle" class="text-3xl font-bold text-purple-600 mb-4"></h2>
+            <p id="popupMessage" class="text-lg text-gray-700 mb-8"></p>
+            <button id="restartButtonPopup" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition duration-300 ease-in-out hover:scale-105 active:scale-95 text-xl">
+                重新開始 🔁
+            </button>
+        </div>
+    </div>
+
+    <!-- 照片解鎖彈出視窗 -->
+    <div id="photoUnlockPopup" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden z-40 transition-opacity duration-300 ease-in-out opacity-0">
+        <!-- 內部容器調整大小 -->
+        <div class="bg-white p-4 sm:p-6 rounded-xl shadow-2xl text-center w-full h-full sm:w-auto sm:h-auto sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[95vh] flex flex-col items-center justify-center relative">
+            <h3 class="text-2xl md:text-3xl font-semibold text-yellow-500 mb-3 mt-4 sm:mt-0">✨ 照片解鎖！✨</h3>
+            <div class="flex-grow flex items-center justify-center w-full overflow-hidden p-2">
+                 <img id="unlockedPhotoImg" src="" alt="解鎖的照片" class="max-w-full max-h-full object-contain rounded-lg border-2 border-yellow-400 shadow-lg">
+            </div>
+            <p id="unlockedPhotoName" class="text-sm md:text-base text-gray-600 my-2 sm:my-3"></p>
+            <button id="closePhotoPopupButton" class="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-5 rounded-lg shadow transform transition hover:scale-105 mb-4 sm:mb-0">
+                太棒了！
+            </button>
+        </div>
+    </div>
+
+    <!-- 音效元素 -->
+    <audio id="audioClick" src="sounds/click.mp3" preload="auto"></audio>
+    <audio id="audioPositive" src="sounds/positive.mp3" preload="auto"></audio>
+    <audio id="audioNegative" src="sounds/negative.mp3" preload="auto"></audio>
+    <audio id="audioItemPickup" src="sounds/item_pickup.mp3" preload="auto"></audio>
+    <audio id="audioGameWin" src="sounds/game_win.mp3" preload="auto"></audio>
+    <audio id="audioGameLose" src="sounds/game_lose.mp3" preload="auto"></audio>
+
+    <script src="script.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainGameArea = document.getElementById('mainGameArea');
+            const studentListArea = document.getElementById('studentListArea');
+            const gamePlayScreen = document.getElementById('gamePlayScreen');
+
+            function adjustStudentListHeight() {
+                if (mainGameArea && studentListArea && gamePlayScreen && gamePlayScreen.offsetParent !== null) { // Check if gamePlayScreen is visible
+                    const mainGameHeight = mainGameArea.offsetHeight;
+                    if (mainGameHeight > 0) {
+                        studentListArea.style.height = mainGameHeight + 'px';
+                        // console.log(`Adjusted studentListArea height to: ${mainGameHeight}px`);
+                    }
+                }
+            }
+
+            // Adjust on window resize
+            window.addEventListener('resize', adjustStudentListHeight);
+
+            // Adjust when game screen becomes visible or its content changes
+            if (gamePlayScreen) {
+                const observer = new MutationObserver((mutationsList) => {
+                    for (const mutation of mutationsList) {
+                        // Check if gamePlayScreen became visible
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                            if (!gamePlayScreen.classList.contains('hidden')) {
+                                setTimeout(adjustStudentListHeight, 50); // Allow layout to settle
+                            }
+                        }
+                        // Check if mainGameArea's direct children or subtree changed, which might affect its height
+                        // This is a more general check for content changes within mainGameArea
+                        if (mutation.type === 'childList' || mutation.type === 'subtree') {
+                             setTimeout(adjustStudentListHeight, 50); // Re-adjust after content change
+                        }
+                    }
+                });
+
+                observer.observe(gamePlayScreen, { attributes: true }); // Observe gamePlayScreen visibility
+                if(mainGameArea) {
+                    observer.observe(mainGameArea, { childList: true, subtree: true }); // Observe mainGameArea content changes
+                }
+            }
+
+            // Fallback: If game is already visible (e.g. during development, if 'hidden' is removed manually)
+            if (gamePlayScreen && !gamePlayScreen.classList.contains('hidden')) {
+                 setTimeout(adjustStudentListHeight, 100); // Longer delay to ensure all initial rendering is done
+            }
+
+            // Expose a function to manually trigger height adjustment if needed from script.js
+            window.triggerStudentListHeightAdjust = () => {
+                setTimeout(adjustStudentListHeight, 50);
+            };
+            // 您可以在 script.js 中的 displayEvent 或 updateUI 函數的末尾調用 window.triggerStudentListHeightAdjust();
+            // 例如，在 displayEvent 函數的末尾（在 setTimeout 更新下一個事件之前）加入：
+            // if (typeof window.triggerStudentListHeightAdjust === 'function') {
+            //     window.triggerStudentListHeightAdjust();
+            // }
+        });
+    </script>
+</body>
+</html>
