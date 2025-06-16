@@ -83,7 +83,7 @@
     const popupTitleElem = document.getElementById('popupTitle');
     const popupMessageElem = document.getElementById('popupMessage');
     const restartButtonPopup = document.getElementById('restartButtonPopup');
-    const studentListContainer = document.getElementById('studentListContainer'); // 新增：獲取學生列表容器
+    // const studentListContainer = document.getElementById('studentListContainer'); // 將由 updateUI 動態管理
     const popupContent = document.getElementById('popupContent');
 
     // 照片解鎖彈出視窗 UI 元素
@@ -532,17 +532,25 @@
     }
 
     // 隨機獲取一位或多位學生名字的輔助函數
-    function getRandomStudentName(count = 1) {
+    function getRandomStudentName(currentStudents, count = 1) {
         if (count <= 0) return [];
-        if (count >= studentNames.length) {
-            // 如果需要的數量大於等於總數，則打亂並返回整個列表的副本
-            return shuffleArray([...studentNames]);
+
+        const activeStudents = currentStudents.filter(s => s.active);
+        if (activeStudents.length === 0) {
+            // 如果沒有活躍的學生，則返回佔位符
+            return Array(count).fill("某同學");
         }
+
+        if (count >= activeStudents.length) {
+            // 如果需要的數量大於等於總數，則打亂並返回整個列表的副本
+            return shuffleArray(activeStudents.map(s => s.name));
+        }
+
         const pickedNames = new Set();
         const result = [];
         while (result.length < count) {
-            const randomIndex = Math.floor(Math.random() * studentNames.length);
-            const name = studentNames[randomIndex];
+            const randomIndex = Math.floor(Math.random() * activeStudents.length);
+            const name = activeStudents[randomIndex].name;
             if (!pickedNames.has(name)) {
                 pickedNames.add(name);
                 result.push(name);
@@ -631,16 +639,21 @@
         }
 
         // 更新右側學生列表
-        if (studentListContainer) {
-            studentListContainer.innerHTML = ''; // 清空現有列表
+        const studentListArea = document.getElementById('studentListArea');
+        if (studentListArea) {
+            // Preserve the title, clear everything else under studentListArea
+            const titleElement = studentListArea.querySelector('h2');
+            let currentElement = titleElement ? titleElement.nextSibling : studentListArea.firstChild;
+            while (currentElement) {
+                const nextElement = currentElement.nextSibling;
+                studentListArea.removeChild(currentElement);
+                currentElement = nextElement;
+            }
 
-            // 將學生分為活躍和不活躍兩組，然後合併，不活躍的在下面
+            // 分別獲取活躍和不活躍的學生
             const activeStudentsDisplay = students.filter(student => student.active);
             const inactiveStudentsDisplay = students.filter(student => !student.active);
-            // 可以選擇對活躍學生列表進行隨機排序
-            const shuffledStudents = shuffleArray([...activeStudentsDisplay]).concat(inactiveStudentsDisplay);
-
-            shuffledStudents.forEach(student => {
+            const createStudentElement = (student) => {
                 const studentDiv = document.createElement('div');
                 // 使用 flex 讓姓名和體力/水分水平排列
                 studentDiv.className = `p-2 rounded-md shadow-sm flex items-center space-x-2 ${student.active ? 'bg-green-100' : 'bg-red-100 opacity-75'}`;
@@ -686,8 +699,72 @@
                 waterDisplay.appendChild(waterBarOuter);
                 studentDiv.appendChild(waterDisplay);
 
-                studentListContainer.appendChild(studentDiv);
-            });
+                return studentDiv;
+            };
+
+            if (inactiveStudentsDisplay.length > 0) {
+                // 情況一：有學生倒下，分割成上下兩個區塊
+                const activeSection = document.createElement('div');
+                activeSection.id = 'activeStudentListSection';
+                activeSection.className = 'flex-1 overflow-y-auto mb-1 p-2 rounded bg-slate-100/50 custom-scrollbar';
+
+                const activeTitle = document.createElement('h3');
+                activeTitle.className = 'text-md font-medium text-green-700 mb-2 sticky top-0 bg-slate-50/80 backdrop-blur-sm py-1 z-10 px-1';
+                activeTitle.textContent = `💪 活躍同學 (${activeStudentsDisplay.length})`;
+                activeSection.appendChild(activeTitle);
+
+                const activeContainer = document.createElement('div');
+                activeContainer.id = 'activeStudentListContainer';
+                activeContainer.className = 'space-y-1.5 pr-1';
+                activeSection.appendChild(activeContainer);
+                studentListArea.appendChild(activeSection);
+
+                if (activeStudentsDisplay.length > 0) {
+                    shuffleArray([...activeStudentsDisplay]).forEach(student => {
+                        activeContainer.appendChild(createStudentElement(student));
+                    });
+                } else {
+                    const emptyMsg = document.createElement('p');
+                    emptyMsg.className = 'text-sm text-gray-500 text-center py-4';
+                    emptyMsg.textContent = '沒有活躍的同學了...';
+                    activeContainer.appendChild(emptyMsg);
+                }
+
+                const inactiveSection = document.createElement('div');
+                inactiveSection.id = 'inactiveStudentListSection';
+                inactiveSection.className = 'flex-1 overflow-y-auto mt-1 p-2 rounded bg-slate-100/50 custom-scrollbar';
+
+                const inactiveTitle = document.createElement('h3');
+                inactiveTitle.className = 'text-md font-medium text-red-700 mb-2 sticky top-0 bg-slate-50/80 backdrop-blur-sm py-1 z-10 px-1';
+                inactiveTitle.textContent = `🤕 已倒下同學 (${inactiveStudentsDisplay.length})`;
+                inactiveSection.appendChild(inactiveTitle);
+
+                const inactiveContainer = document.createElement('div');
+                inactiveContainer.id = 'inactiveStudentListContainer';
+                inactiveContainer.className = 'space-y-1.5 pr-1';
+                inactiveSection.appendChild(inactiveContainer);
+                studentListArea.appendChild(inactiveSection);
+
+                inactiveStudentsDisplay.forEach(student => {
+                    inactiveContainer.appendChild(createStudentElement(student));
+                });
+
+            } else {
+                // 情況二：所有學生都活躍，顯示在一個區塊
+                const singleSection = document.createElement('div');
+                singleSection.id = 'allStudentListSection'; // 或 studentListContainerWrapper
+                singleSection.className = 'flex-1 overflow-y-auto p-1 custom-scrollbar'; // p-1 to align with pr-1 in container
+
+                const container = document.createElement('div');
+                container.id = 'studentListContainer'; // 可以重用舊ID，如果其他地方沒有依賴
+                container.className = 'space-y-1.5 pr-1'; // pr-1 for scrollbar space
+                singleSection.appendChild(container);
+                studentListArea.appendChild(singleSection);
+
+                shuffleArray([...activeStudentsDisplay]).forEach(student => {
+                    container.appendChild(createStudentElement(student));
+                });
+            }
         }
     }
 
@@ -713,7 +790,7 @@
         }
         namesToFetchCount = Math.max(0, namesToFetchCount); // Ensure not negative
 
-        const studentNamesForText = getRandomStudentName(namesToFetchCount);
+        const studentNamesForText = getRandomStudentName(students, namesToFetchCount); // Pass students array
         let actualNamesUsed = [];
 
         // If there were no placeholders and no names were requested via hint, return original text
@@ -818,6 +895,7 @@
             if (student.active) {
                 student.stamina = Math.max(0, student.stamina - PER_TURN_STAMINA_COST);
                 student.water = Math.max(0, student.water - PER_TURN_WATER_COST);
+                console.log(`回合消耗後 - ${student.name}: 體力=${student.stamina}, 水分=${student.water}`); // 新增 log
                 if (student.stamina === 0 || student.water === 0) {
                     student.active = false;
                     anyStudentFaintedThisTurn = true;
@@ -827,7 +905,7 @@
         });
 
         updateUI(); // 先更新一次UI顯示回合消耗
-
+        console.log(`回合消耗後活躍學生數: ${students.filter(s => s.active).length}`); // 新增 log
         // 如果因為回合消耗導致體力或水分歸零，直接遊戲失敗
         if (students.filter(s => s.active).length === 0) {
              checkGameStatus(); // 這裡會觸發遊戲失敗彈窗
@@ -844,7 +922,7 @@
         eventTextElem.innerHTML = eventTextResult.formattedText;
 
         // 為每個選項創建按鈕
-        event.options.forEach((option) => {
+        event.options.forEach((option) => { // Ensure `students` is passed to getRandomStudentName via formatTextWithStudentNames
             const button = document.createElement('button');
             const optionTextResult = formatTextWithStudentNames(option.text, option.numStudents || (option.text.includes("[studentName2]") ? 2 : (option.text.includes("[studentName1]") || option.text.includes("[studentName]") ? 1 : 0)));
             button.textContent = optionTextResult.formattedText;
@@ -949,6 +1027,7 @@
         affectedStudentList.forEach(student => {
             student.stamina = Math.min(INITIAL_STAMINA, Math.max(0, student.stamina + selectedOption.staminaChange));
             student.water = Math.min(INITIAL_WATER, Math.max(0, student.water + selectedOption.waterChange));
+            console.log(`選項結果後 - ${student.name}: 體力=${student.stamina}, 水分=${student.water}`); // 新增 log
             if (!student.active) return; // Already fainted this turn or previous
             if (student.stamina === 0 || student.water === 0) {
                 student.active = false;
@@ -1000,25 +1079,33 @@
     // 檢查遊戲狀態 (勝利或失敗)
     function checkGameStatus() {
         const activeStudentCount = students.filter(s => s.active).length;
+        console.log(`檢查遊戲狀態: 活躍學生數=${activeStudentCount}, 當前事件索引=${sequenceIndex}, 總事件數=${currentEventSequence.length}`); // 新增 log
         if (activeStudentCount === 0) {
+            console.log("所有學生已倒下，準備顯示失敗彈窗..."); // 新增 log
             playSound(audioGameLose);
             // Message can be more specific, e.g., "所有同學都已精疲力盡..."
             showPopup("挑戰失敗！😭", `所有同學都已精疲力盡或脫水！${teacherName}和同學們無法繼續前進…`);
+            return true; // 遊戲結束
         } else if (sequenceIndex >= currentEventSequence.length) {
             playSound(audioGameWin);
             let survivorNames = students.filter(s => s.active).map(s => s.name).join("、");
             if (students.filter(s => s.active).length === students.length) survivorNames = "六年四班全體同學";
             else if (students.filter(s => s.active).length === 0) survivorNames = "沒有人"; // Should be caught by above
             showPopup("恭喜過關！🏆", `${teacherName}和 ${survivorNames} 成功登上山頂！這就是團結、智慧與堅持的力量！🎉`);
+            return true; // 遊戲結束
         }
+        console.log("遊戲繼續..."); // 新增 log
+        return false; // 遊戲未結束
     }
 
     // 顯示遊戲結束/勝利彈出視窗
     function showPopup(title, message) {
+        console.log(`showPopup 被呼叫: title="${title}", message="${message}"`); // 新增 log
         popupTitleElem.textContent = title;
         popupMessageElem.textContent = message;
-        gameOverPopup.classList.remove('hidden');
-        gameOverPopup.classList.add('flex');
+        gameOverPopup.classList.remove('hidden'); // 移除 hidden 使其不再是 display:none
+        gameOverPopup.classList.remove('opacity-0'); // 移除初始的透明狀態
+        gameOverPopup.classList.add('opacity-100');  // 設定目標為完全不透明，觸發淡入動畫
         // 添加動畫類別，讓彈出視窗平滑顯示
         popupContent.classList.remove('scale-90', 'opacity-0');
         popupContent.classList.add('scale-100', 'opacity-100');
@@ -1033,9 +1120,13 @@
         photosUnlockedThisSession = 0; // 重置本局協作解鎖照片計數
         unlockedPhotos.clear(); // 重設遊戲時清空已解鎖照片
         outcomeTextElem.textContent = ''; // 清除結果文字
+
         // 隱藏彈出視窗並重設動畫類別
-        gameOverPopup.classList.remove('flex');
+        // For gameOverPopup (the overlay)
+        gameOverPopup.classList.remove('opacity-100'); // 移除完全不透明狀態
+        gameOverPopup.classList.add('opacity-0');    // 加回初始的透明狀態，為下次顯示做準備
         gameOverPopup.classList.add('hidden');
+        // For popupContent (the modal box)
         popupContent.classList.remove('scale-100', 'opacity-100');
         popupContent.classList.add('scale-90', 'opacity-0');
         displayEvent(); // 顯示第一個事件，開始新遊戲

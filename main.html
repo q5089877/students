@@ -43,18 +43,18 @@
     </script>
     <style>
         .resource-bar-fill { transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out; }
-        #studentListContainer::-webkit-scrollbar {
+        .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
         }
-        #studentListContainer::-webkit-scrollbar-track {
+        .custom-scrollbar::-webkit-scrollbar-track {
             background: #e9d5ff;
             border-radius: 10px;
         }
-        #studentListContainer::-webkit-scrollbar-thumb {
+        .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #a855f7;
             border-radius: 10px;
         }
-        #studentListContainer::-webkit-scrollbar-thumb:hover {
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #9333ea;
         }
     </style>
@@ -144,11 +144,8 @@
         </div>
 
         <!-- 右側學生狀態列表 -->
-        <div id="studentListArea" class="w-full md:w-2/5 lg:w-1/3 bg-slate-50 bg-opacity-90 p-4 rounded-xl shadow-xl max-h-[90vh] overflow-y-auto">
+        <div id="studentListArea" class="w-full md:w-2/5 lg:w-1/3 bg-slate-50 bg-opacity-90 p-4 rounded-xl shadow-xl flex flex-col max-h-[90vh]">
             <h2 class="text-xl font-semibold text-gray-800 mb-3 text-center border-b pb-2 border-gray-300">全班狀態</h2>
-            <div id="studentListContainer" class="space-y-1.5 pr-1">
-                <!-- 學生狀態會由 JavaScript 動態填入 -->
-            </div>
         </div>
     </div>
 
