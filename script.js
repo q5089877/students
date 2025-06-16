@@ -47,11 +47,11 @@
     function generatePhotoFilenames(count) {
         const filenames = [];
         for (let i = 1; i <= count; i++) {
-            filenames.push(`photo_${String(i).padStart(3, '0')}.jpg`);
+            filenames.push(`photo_${String(i).padStart(3, '0')}.JPG`);
         }
         return filenames;
     }
-    const ALL_PHOTO_FILENAMES = generatePhotoFilenames(204); // 生成 photo_001.jpg 到 photo_204.jpg
+    const ALL_PHOTO_FILENAMES = generatePhotoFilenames(204); // 生成 photo_001.JPG 到 photo_204.JPG
     let unlockedPhotos = new Set(); // 用來儲存已解鎖照片的識別碼
     let totalCollaborationScore = 0; // 新增：全班協作總分
     let photosUnlockedThisSession = 0; // 新增：本局遊戲已透過協作解鎖的照片數量
