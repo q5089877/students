@@ -1,8 +1,8 @@
 (function() { // IIFE Start
     // 遊戲變數初始化
-    const INITIAL_STAMINA = 45; // 全班共享體力值上限及初始值
-    const INITIAL_WATER = 30; // 全班共享水分值上限及初始值
-    const PER_TURN_STAMINA_COST = 3; // 每回合固定消耗體力 (此處未按要求修改，僅修改水分)
+    const INITIAL_STAMINA = 70; // 全班共享體力值上限及初始值
+    const INITIAL_WATER = 70; // 全班共享水分值上限及初始值
+    const PER_TURN_STAMINA_COST = 2; // 每回合固定消耗體力 (此處未按要求修改，僅修改水分)
     const PER_TURN_WATER_COST = 1;   // 每回合固定消耗水分 (per active student) - 已修改為 1
 
     // UI 視覺閾值 (用於資源條顏色和進度條顏色)
@@ -907,34 +907,38 @@
             return;
         }
 
-        // 應用回合消耗
-        let anyStudentFaintedThisTurn = false;
-        students.forEach(student => {
-            if (student.active) {
-                student.stamina = Math.max(0, student.stamina - PER_TURN_STAMINA_COST);
-                student.water = Math.max(0, student.water - PER_TURN_WATER_COST);
-                console.log(`回合消耗後 - ${student.name}: 體力=${student.stamina}, 水分=${student.water}`); // 新增 log
-                if (student.stamina === 0 || student.water === 0) {
-                    student.active = false;
-                    anyStudentFaintedThisTurn = true;
-                    // outcomeTextElem.textContent += `\n${student.name} 因回合消耗而倒下了！`; // Optional immediate feedback
+        // Apply per-turn costs only if it's not the first event (intro event)
+        if (sequenceIndex > 0) {
+            // 應用回合消耗
+            let anyStudentFaintedThisTurn = false;
+            students.forEach(student => {
+                if (student.active) {
+                    student.stamina = Math.max(0, student.stamina - PER_TURN_STAMINA_COST);
+                    student.water = Math.max(0, student.water - PER_TURN_WATER_COST);
+                    // console.log(`回合消耗後 - ${student.name}: 體力=${student.stamina}, 水分=${student.water}`); // Log for debugging
+                    if (student.stamina === 0 || student.water === 0) {
+                        student.active = false;
+                        anyStudentFaintedThisTurn = true;
+                        // outcomeTextElem.textContent += `\n${student.name} 因回合消耗而倒下了！`; // Optional immediate feedback
+                    }
                 }
-            }
-        });
+            });
 
-        updateUI(); // 先更新一次UI顯示回合消耗
-        console.log(`回合消耗後活躍學生數: ${students.filter(s => s.active).length}`); // 新增 log
-        // 如果因為回合消耗導致體力或水分歸零，直接遊戲失敗
-        if (students.filter(s => s.active).length === 0) {
-             checkGameStatus(); // 這裡會觸發遊戲失敗彈窗
-             return; // 阻止事件選項顯示
+            updateUI(); // Update UI to reflect turn costs
+            // console.log(`回合消耗後活躍學生數: ${students.filter(s => s.active).length}`); // Log for debugging
+            // If all students fainted due to turn costs, end the game
+            if (students.filter(s => s.active).length === 0) {
+                 checkGameStatus(); // This will trigger the game over popup
+                 return; // Prevent displaying event options
+            }
         }
 
         // 替換事件文字中的學生名字佔位符
         // Determine numStudentsHint for event text
         let numStudentsHintForEvent = event.needsStudent ? 1 : 0;
         if (event.text.includes("[studentName1]") || event.text.includes("[studentName2]")) numStudentsHintForEvent = 2;
-        else if (event.text.includes("[studentName]")) numStudentsHintForEvent = 1;
+        else if (event.text.includes("[studentName]")) numStudentsHintForEvent = 1; //This was an existing line, ensure it's not removed by mistake
+
 
         const eventTextResult = formatTextWithStudentNames(event.text, numStudentsHintForEvent);
         eventTextElem.innerHTML = eventTextResult.formattedText;
@@ -979,7 +983,9 @@
             };
             optionsArea.appendChild(button);
         });
-        updateUI(); // 再次更新UI以確保最新狀態
+
+        // Update UI after setting up the event text and options
+        updateUI();
     }
 
     // 獲取物品的中文顯示名稱
@@ -990,6 +996,7 @@
     // 處理選項選擇
     function handleOption(selectedOption, namesInOptionText) {
         let outcomeZusatz = ""; // Additional text for outcome if students faint
+        let waterBottleRecipientName = null; // To store the name of the student who got a water bottle and immediate bonus
 
         playSound(audioClick); // 選項按鈕點擊音效放在最前面
         eventTextElem.innerHTML = ''; // 問題消失
@@ -1009,16 +1016,31 @@
         // 處理獲得物品
         if (selectedOption.giveItem) {
             selectedOption.giveItem.forEach(itemKey => {
-                const previouslyOwned = inventory[itemKey]; // 檢查是否已擁有
                 inventory[itemKey] = true; // 標記為擁有
 
-                // 如果獲得的是水瓶，立即補充一些水分
+                // If a water bottle is obtained, a specific student gets an immediate water bonus.
                 if (itemKey === 'waterBottle') {
-                    // This should ideally affect the student who "found" or was given the water bottle
-                    // For simplicity now, let's assume the first name in option text if any, or a random active student
-                    const targetStudent = namesInOptionText.length > 0 ? students.find(s => s.name === namesInOptionText[0] && s.active) : students.find(s => s.active);
-                    if (targetStudent) targetStudent.water = Math.min(INITIAL_WATER, targetStudent.water + 10);
-                } // 使用 WATER_BOTTLE_RECOVERY_AMOUNT 常數
+                    let studentForBottleEffect = null;
+                    // Priority: Student mentioned in the option button text that led to this.
+                    if (namesInOptionText.length > 0) { // namesInOptionText are from the button clicked
+                        studentForBottleEffect = students.find(s => s.name === namesInOptionText[0] && s.active);
+                    }
+
+                    if (!studentForBottleEffect) {
+                        // If no specific student from the option text, pick a random active student.
+                        // This covers general "found item" events.
+                        const activeStudentsList = students.filter(s => s.active);
+                        if (activeStudentsList.length > 0) {
+                            studentForBottleEffect = activeStudentsList[Math.floor(Math.random() * activeStudentsList.length)];
+                        }
+                    }
+
+                    if (studentForBottleEffect) {
+                        studentForBottleEffect.water = Math.min(INITIAL_WATER, studentForBottleEffect.water + WATER_BOTTLE_RECOVERY_AMOUNT);
+                        waterBottleRecipientName = studentForBottleEffect.name; // Store for the outcome message
+                        console.log(`${waterBottleRecipientName} 獲得水瓶並立即補充 ${WATER_BOTTLE_RECOVERY_AMOUNT} 水分。`);
+                    }
+                }
 
                 const itemElement = document.getElementById(ITEMS[itemKey].id);
                 if (itemElement) {
@@ -1069,8 +1091,14 @@
         const mainOutcomeTextResult = formatTextWithStudentNames(selectedOption.outcomeText, numStudentsHintForOutcome);
 
         let finalOutcomeDisplay = mainOutcomeTextResult.formattedText;
+
+        // Append message for water bottle recipient, if any
+        if (waterBottleRecipientName) {
+            finalOutcomeDisplay += `<br><em class="text-sm text-blue-600 italic">${waterBottleRecipientName} 因新獲得的水瓶💧，額外補充了 ${WATER_BOTTLE_RECOVERY_AMOUNT} 點水分！</em>`;
+        }
+
+        // Append message for fainted students
         if (outcomeZusatz) {
-            // 將倒下訊息附加到主結果後，使用<br>換行並給予不同樣式
             finalOutcomeDisplay += `<br><em class="text-sm text-gray-500 italic">${outcomeZusatz.trim().replace(/\n/g, "<br>")}</em>`;
         }
         eventTextElem.innerHTML = finalOutcomeDisplay; // 結果顯示在 eventTextElem
