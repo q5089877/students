@@ -798,60 +798,52 @@
 
     // 輔助函數：格式化包含學生姓名的文字
     function formatTextWithStudentNames(text, numStudentsHint = 1) {
-        let formattedText = text;
+    // 先统一给老师名字上色
+    const teacherNameRegex = new RegExp(escapeRegExp(teacherName), 'g');
+    let formattedText = text.replace(
+        teacherNameRegex,
+        `<span class="text-emerald-700 font-bold">${teacherName}</span>`
+    );
 
-        const hasS1 = text.includes("[studentName1]");
-        const hasS2 = text.includes("[studentName2]");
-        const hasS = text.includes("[studentName]");
+    // 以下逻辑跟你原来的一样，只把 formattedText 当作初始字符串继续处理
+    const hasS1 = formattedText.includes("[studentName1]");
+    const hasS2 = formattedText.includes("[studentName2]");
+    const hasS  = formattedText.includes("[studentName]");
 
-        // Determine the number of unique student names to fetch
-        let namesToFetchCount;
-        if (hasS2) {
-            // If [studentName2] is present, we need at least 2 names for [studentName1] and [studentName2] to be different.
-            namesToFetchCount = Math.max(2, numStudentsHint);
-        } else if (hasS1 || hasS) {
-            // If only [studentName1] or [studentName] is present, we need at least 1 name.
-            namesToFetchCount = Math.max(1, numStudentsHint);
-        } else {
-            // If no student placeholders, rely purely on the hint
-            namesToFetchCount = numStudentsHint;
-        }
-        namesToFetchCount = Math.max(0, namesToFetchCount); // Ensure not negative
+    let namesToFetchCount;
+    if (hasS2) namesToFetchCount = Math.max(2, numStudentsHint);
+    else if (hasS1 || hasS) namesToFetchCount = Math.max(1, numStudentsHint);
+    else namesToFetchCount = numStudentsHint;
+    namesToFetchCount = Math.max(0, namesToFetchCount);
 
-        const studentNamesForText = getRandomStudentName(students, namesToFetchCount); // Pass students array
-        let actualNamesUsed = [];
+    const studentNamesForText = getRandomStudentName(students, namesToFetchCount);
+    let actualNamesUsed = [];
 
-        // If there were no placeholders and no names were requested via hint, return original text
-        if (!hasS1 && !hasS2 && !hasS && namesToFetchCount === 0) {
-            return { formattedText: formattedText, namesUsed: [] };
-        }
+    const name1 = studentNamesForText[0] || "某同學";
+    const name2 = studentNamesForText[1] || name1;
 
-        const name1 = (studentNamesForText.length > 0) ? studentNamesForText[0] : "某同學";
-        const name2 = (studentNamesForText.length > 1) ? studentNamesForText[1] : name1; // Fallback name2 to name1 if only one distinct name fetched
-
-        if (hasS1) {
-            formattedText = formattedText.replace(/\[studentName1\]/g, `<span class="text-blue-600 font-semibold">${name1}</span>`);
-            if (studentNamesForText.length > 0 && !actualNamesUsed.includes(name1)) actualNamesUsed.push(name1);
-        }
-        if (hasS2) {
-            formattedText = formattedText.replace(/\[studentName2\]/g, `<span class="text-blue-600 font-semibold">${name2}</span>`);
-            if (studentNamesForText.length > 1 && !actualNamesUsed.includes(name2)) actualNamesUsed.push(name2);
-            else if (studentNamesForText.length > 0 && !actualNamesUsed.includes(name1)) actualNamesUsed.push(name1); // if name2 fell back to name1
-        }
-        if (hasS) {
-            // If [studentName] is present, it usually refers to the first student if not specified otherwise
-            formattedText = formattedText.replace(/\[studentName\]/g, `<span class="text-blue-600 font-semibold">${name1}</span>`);
-            if (studentNamesForText.length > 0 && !actualNamesUsed.includes(name1)) actualNamesUsed.push(name1);
-        }
-        // Ensure unique names in actualNamesUsed
-        actualNamesUsed = [...new Set(actualNamesUsed)];
-
-        // 為老師的名字添加樣式
-        const teacherNameRegex = new RegExp(escapeRegExp(teacherName), 'g');
-        formattedText = formattedText.replace(teacherNameRegex, `<span class="text-emerald-700 font-bold">${teacherName}</span>`);
-
-        return { formattedText: formattedText, namesUsed: actualNamesUsed };
+    if (hasS1) {
+        formattedText = formattedText.replace(/\[studentName1\]/g,
+            `<span class="text-blue-600 font-semibold">${name1}</span>`);
+        actualNamesUsed.push(name1);
     }
+    if (hasS2) {
+        formattedText = formattedText.replace(/\[studentName2\]/g,
+            `<span class="text-blue-600 font-semibold">${name2}</span>`);
+        actualNamesUsed.push(name2);
+    }
+    if (hasS) {
+        formattedText = formattedText.replace(/\[studentName\]/g,
+            `<span class="text-blue-600 font-semibold">${name1}</span>`);
+        actualNamesUsed.push(name1);
+    }
+
+    // 确保名字去重
+    actualNamesUsed = [...new Set(actualNamesUsed)];
+    return { formattedText, namesUsed: actualNamesUsed };
+    }
+
+
     // 新增：顯示照片解鎖通知
     function showPhotoUnlockNotification(photoPath, photoFilename) {
         if (unlockedPhotoImg && photoUnlockPopup && unlockedPhotoName) {
@@ -1149,19 +1141,18 @@
 
     // 顯示遊戲結束/勝利彈出視窗
     function showPopup(title, message) {
-        console.log(`showPopup 被呼叫: title="${title}", message="${message}"`); // 新增 log
-        let formattedMessage = message;
-        // 為老師的名字在彈出訊息中添加樣式
-        // escapeRegExp 和 teacherName 變數在此函數作用域內可用
+        // 先给老师名字上色
         const teacherNameRegex = new RegExp(escapeRegExp(teacherName), 'g');
-        formattedMessage = formattedMessage.replace(teacherNameRegex, `<span class="text-emerald-700 font-bold">${teacherName}</span>`);
+        const formattedMessage = message.replace(
+            teacherNameRegex,
+            `<span class="text-emerald-700 font-bold">${teacherName}</span>`
+        );
 
         popupTitleElem.textContent = title;
-        popupMessageElem.innerHTML = formattedMessage; // 使用 innerHTML 以渲染樣式
-        gameOverPopup.classList.remove('hidden'); // 移除 hidden 使其不再是 display:none
-        gameOverPopup.classList.remove('opacity-0'); // 移除初始的透明狀態
-        gameOverPopup.classList.add('opacity-100');  // 設定目標為完全不透明，觸發淡入動畫
-        // 添加動畫類別，讓彈出視窗平滑顯示
+        popupMessageElem.innerHTML = formattedMessage;  // 用 innerHTML 渲染样式
+
+        gameOverPopup.classList.remove('hidden', 'opacity-0');
+        gameOverPopup.classList.add('opacity-100');
         popupContent.classList.remove('scale-90', 'opacity-0');
         popupContent.classList.add('scale-100', 'opacity-100');
     }
