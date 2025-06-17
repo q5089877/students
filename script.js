@@ -1,61 +1,59 @@
+// 遊戲變數初始化
+const INITIAL_STAMINA = 65; // 全班共享體力值上限及初始值
+const INITIAL_WATER = 65; // 全班共享水分值上限及初始值
+const PER_TURN_STAMINA_COST = 2; // 每回合固定消耗體力 (此處未按要求修改，僅修改水分)
+const PER_TURN_WATER_COST = 1;   // 每回合固定消耗水分 (per active student) - 已修改為 1
+
+// UI 視覺閾值 (用於資源條顏色和進度條顏色)
+const HIGH_RESOURCE_THRESHOLD_RATIO = 0.7; // 高資源閾值比例 (例如 70%)
+const LOW_RESOURCE_THRESHOLD_RATIO = 0.3;  // 低資源閾值比例 (例如 30%)
+const HIGH_PROGRESS_THRESHOLD_PERCENT = 75; // 高進度閾值百分比
+const MID_PROGRESS_THRESHOLD_PERCENT = 40;  // 中進度閾值百分比
+const HIGH_STUDENT_RESOURCE_THRESHOLD_PERCENT = 70; // 學生單項資源高閾值百分比
+const LOW_STUDENT_RESOURCE_THRESHOLD_PERCENT = 30;  // 學生單項資源低閾值百分比
+
+// 持續時間設定 (毫秒)
+const OUTCOME_DISPLAY_DURATION_MS = 3200; // 顯示結果後等待的時間
+const ITEM_PULSE_ANIMATION_MS = 800;      // 物品獲得時的脈衝動畫時間
+// 物品效果數值
+const WATER_BOTTLE_RECOVERY_AMOUNT = 12; // 獲得水瓶時恢復的水量
+
+const studentNames = [
+    "蔡宥丞", "蔡羽恩", "陳湘晴", "陳芊錡", "陳楷恩", "江芊妏", "賴玧樂", "廖予謙",
+    "林泓佑", "林書玉", "林瑋琦", "李承宥", "劉苪希", "彭唯", "潘祐丞", "許翔淏",
+    "徐翊庭", "謝從偉", "吳宥珈", "王懸", "王品勛", "黃宜潔", "黃保慈", "黃馨恩",
+    "黃郁晴", "黃志懿", "張辰煥", "周宇桐"
+];
+
+let students = [];
+
+function initializeStudentStats() {
+    students = studentNames.map(name => ({
+        name: name,
+        stamina: INITIAL_STAMINA,
+        water: INITIAL_WATER,
+        active: true // true if student can participate, false if fainted
+    }));
+}
+
+// 照片相關設定 (如果沒有 config.js，則定義於此)
+const PHOTO_BASE_PATH = "images/life_photos/";
+
+// 輔助函數生成照片檔名
+function generatePhotoFilenames(count) {
+    const filenames = [];
+    for (let i = 1; i <= count; i++) {
+        filenames.push(`photo_${String(i).padStart(3, '0')}.JPG`);
+    }
+    return filenames;
+}
+const ALL_PHOTO_FILENAMES = generatePhotoFilenames(204); // 生成 photo_001.JPG 到 photo_204.JPG
+let unlockedPhotos = new Set(); // 用來儲存已解鎖照片的識別碼
+let totalCollaborationScore = 0; // 新增：全班協作總分
+let photosUnlockedThisSession = 0; // 新增：本局遊戲已透過協作解鎖的照片數量
+const POINTS_PER_PHOTO = 10; // 修改：每解鎖一張照片所需的協作點數 (調整為10)
+
 (function() { // IIFE Start
-    // 遊戲變數初始化
-    const INITIAL_STAMINA = 65; // 全班共享體力值上限及初始值
-    const INITIAL_WATER = 65; // 全班共享水分值上限及初始值
-    const PER_TURN_STAMINA_COST = 2; // 每回合固定消耗體力 (此處未按要求修改，僅修改水分)
-    const PER_TURN_WATER_COST = 1;   // 每回合固定消耗水分 (per active student) - 已修改為 1
-
-    // UI 視覺閾值 (用於資源條顏色和進度條顏色)
-    const HIGH_RESOURCE_THRESHOLD_RATIO = 0.7; // 高資源閾值比例 (例如 70%)
-    const LOW_RESOURCE_THRESHOLD_RATIO = 0.3;  // 低資源閾值比例 (例如 30%)
-    const HIGH_PROGRESS_THRESHOLD_PERCENT = 75; // 高進度閾值百分比
-    const MID_PROGRESS_THRESHOLD_PERCENT = 40;  // 中進度閾值百分比
-    const HIGH_STUDENT_RESOURCE_THRESHOLD_PERCENT = 70; // 學生單項資源高閾值百分比
-    const LOW_STUDENT_RESOURCE_THRESHOLD_PERCENT = 30;  // 學生單項資源低閾值百分比
-
-    // 持續時間設定 (毫秒)
-    const OUTCOME_DISPLAY_DURATION_MS = 3200; // 顯示結果後等待的時間
-    const ITEM_PULSE_ANIMATION_MS = 800;      // 物品獲得時的脈衝動畫時間
-
-    // 物品效果數值
-    const WATER_BOTTLE_RECOVERY_AMOUNT = 12; // 獲得水瓶時恢復的水量
-    const teacherName = "賴冠儒老師"; // 老師的名字
-    // 六年四班的學生名單
-    const studentNames = [
-        "蔡宥丞", "蔡羽恩", "陳湘晴", "陳芊錡", "陳楷恩", "江芊妏", "賴玧樂", "廖予謙",
-        "林泓佑", "林書玉", "林瑋琦", "李承宥", "劉苪希", "彭唯", "潘祐丞", "許翔淏",
-        "徐翊庭", "謝從偉", "吳宥珈", "王懸", "王品勛", "黃宜潔", "黃保慈", "黃馨恩",
-        "黃郁晴", "黃志懿", "張辰煥", "周宇桐"
-    ];
-
-    let students = [];
-    let sequenceIndex = 0; // 當前事件在序列中的索引
-
-    function initializeStudentStats() {
-        students = studentNames.map(name => ({
-            name: name,
-            stamina: INITIAL_STAMINA,
-            water: INITIAL_WATER,
-            active: true // true if student can participate, false if fainted
-        }));
-    }
-
-    // 照片相關設定 (如果沒有 config.js，則定義於此)
-    const PHOTO_BASE_PATH = "images/life_photos/";
-
-    // 輔助函數生成照片檔名
-    function generatePhotoFilenames(count) {
-        const filenames = [];
-        for (let i = 1; i <= count; i++) {
-            filenames.push(`photo_${String(i).padStart(3, '0')}.JPG`);
-        }
-        return filenames;
-    }
-    const ALL_PHOTO_FILENAMES = generatePhotoFilenames(204); // 生成 photo_001.JPG 到 photo_204.JPG
-    let unlockedPhotos = new Set(); // 用來儲存已解鎖照片的識別碼
-    let totalCollaborationScore = 0; // 新增：全班協作總分
-    let photosUnlockedThisSession = 0; // 新增：本局遊戲已透過協作解鎖的照片數量
-    const POINTS_PER_PHOTO = 10; // 修改：每解鎖一張照片所需的協作點數 (調整為10)
 
     // 集中管理物品定義
     const ITEMS = {
@@ -77,7 +75,7 @@
     }
     initializeInventory(); // 初始化物品
 
-
+    let sequenceIndex = 0; // 當前事件在序列中的索引
 
     // UI 元素獲取
     const welcomeScreen = document.getElementById('welcomeScreen');
@@ -92,21 +90,21 @@
     const stageProgressBarElem = document.getElementById('stageProgressBar');
     const eventTextElem = document.getElementById('eventText');
     // const outcomeTextElem = document.getElementById('outcomeText'); // 此元素似乎未使用
-    const optionsArea = document.getElementById('optionsArea');
-    const gameOverPopup = document.getElementById('gameOverPopup');
-    const popupTitleElem = document.getElementById('popupTitle');
-    const popupMessageElem = document.getElementById('popupMessage');
-    const restartButtonPopup = document.getElementById('restartButtonPopup');
-    // const studentListContainer = document.getElementById('studentListContainer'); // 將由 updateUI 動態管理
-    const popupContent = document.getElementById('popupContent');
+    const optionsArea = document.getElementById('optionsArea'); // Moved inside IIFE
+    const gameOverPopup = document.getElementById('gameOverPopup'); // Moved inside IIFE
+    const popupTitleElem = document.getElementById('popupTitle'); // Moved inside IIFE
+    const popupMessageElem = document.getElementById('popupMessage'); // Moved inside IIFE
+    const restartButtonPopup = document.getElementById('restartButtonPopup'); // Moved inside IIFE
+    // const studentListContainer = document.getElementById('studentListContainer'); // 將由 updateUI 動態管理 // Moved inside IIFE
+    const popupContent = document.getElementById('popupContent'); // Moved inside IIFE
 
-    // 照片解鎖彈出視窗 UI 元素
+    // 照片解鎖彈出視窗 UI 元素 // Moved inside IIFE
     const photoUnlockPopup = document.getElementById('photoUnlockPopup');
     const unlockedPhotoImg = document.getElementById('unlockedPhotoImg');
     const unlockedPhotoName = document.getElementById('unlockedPhotoName');
     const closePhotoPopupButton = document.getElementById('closePhotoPopupButton');
 
-    // 音效元素獲取 (假設這些 ID 存在於 HTML 中)
+    // 音效元素獲取 (假設這些 ID 存在於 HTML 中) // Moved inside IIFE
     const audioClick = document.getElementById('audioClick');
     const audioPositive = document.getElementById('audioPositive');
     const audioNegative = document.getElementById('audioNegative');
@@ -114,407 +112,16 @@
     const audioGameWin = document.getElementById('audioGameWin');
     const audioGameLose = document.getElementById('audioGameLose');
 
-    // 物品欄顯示元素 (動態獲取或預先存儲)
+    // 物品欄顯示元素 (動態獲取或預先存儲) // Moved inside IIFE
     const itemDisplayElements = {};
     for (const key in ITEMS) {
         itemDisplayElements[key] = document.getElementById(ITEMS[key].id);
     }
 
-    // 遊戲事件資料庫，按階段分類
-    // (事件資料庫內容與之前相同，此處省略以節省篇幅，實際應包含所有事件)
-    const eventsByStage = {
-        "intro": [
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: `各位六年四班的勇士們，我是你們的導師 ${teacherName}，準備好了嗎？前方就是傳說中的『智慧之山』！💪`,
-                options: [{ text: "開始我們的旅程！🚀", staminaChange: 0, waterChange: 0, outcomeText: `${teacherName}：「同學們，我們的目標是山頂！記住，團結就是力量！」😊` }]
-            }
-        ],
-        "forest": [
-            // 迷路類事件
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "突然，前方小徑被濃霧籠罩，出現了兩條岔路。該走哪條呢？🌫️",
-                options: [
-                    { text: `跟隨 ${teacherName}，走看起來比較穩重的那條路。😎`, staminaChange: -5, waterChange: -3, outcomeText: `${teacherName} 帶大家沉著應對，成功走出迷霧。👏 但每個人都走了些冤枉路。`, effectScope: 'all_active' }, // staminaChange -5, OK
-                    { text: "讓 [studentName] 帶頭走那條看起來有蝴蝶🦋的路！", staminaChange: -20, waterChange: -8, outcomeText: `哎呀！[studentName] 帶大家繞了一大圈，還差點踩到泥坑！💦 [studentName] 的體力水分都下降了！[studentName]：「我肚子好餓喔…」` }, // waterChange -8, OK
-                    { text: "拿出地圖🗺️，仔細比對路線！", staminaChange: 10, waterChange: 0, outcomeText: `地圖顯示這條路是捷徑！大家輕鬆通過，體力小幅恢復。`, requiredItem: 'map', consumeItem: 'map' }
-                ]
-            },
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "周圍的樹木長得一模一樣，大家感覺迷失了方向！🔄",
-                options: [
-                    { text: "原地等待，或許能找到線索。", staminaChange: -8, waterChange: -5, outcomeText: `原地等待耗費了大家的時間和體力，每個人都感到更加焦慮。`, effectScope: 'all_active' }, // staminaChange -10 -> -8
-                    { text: "拿出地圖🗺️，嘗試辨別方向。", staminaChange: 12, waterChange: 0, outcomeText: `地圖清晰地顯示了正確的路線！大家重新找到方向，精神一振！`, requiredItem: 'map', consumeItem: 'map', effectScope: 'all_active' }
-                ]
-            },
-            // 食物/資源類事件
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "路邊發現一棵結滿紅色果實的樹，看起來很誘人。要吃嗎？🍎",
-                options: [
-                    { text: "雖然看起來好吃，但野外的東西還是別亂吃比較好。🙅‍♀️", staminaChange: 0, waterChange: 0, outcomeText: `${teacherName}：「做得好同學們，野外求生知識很重要！」👍` }, // staminaChange 0, OK
-                    { text: "哇！看起來好美味！讓 [studentName1] 和 [studentName2] 快去摘來吃！😋", numStudents: 2, staminaChange: -25, waterChange: -8, outcomeText: `[studentName1] 和 [studentName2] 開心地吃了起來，結果肚子痛得哇哇叫！😫 他們的體力水分大減！(附帶搞笑音效：噗嚕噗嚕) [studentName1]：「我好想回家上廁所喔…」` }, // waterChange -10 -> -8
-                    { text: "使用急救包🩹，分析果實是否有毒！", staminaChange: 5, waterChange: 0, outcomeText: `急救包中的檢測工具顯示果實有毒！幸好沒有吃，使用急救包的同學還因此恢復了一些精神！`, requiredItem: 'firstAidKit', consumeItem: 'firstAidKit' } // Assuming the one using the kit gets a small boost
-                ]
-            },
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "灌木叢中隱約看見一個閃閃發光的寶箱！要打開嗎？📦✨",
-                options: [
-                    { text: "小心翼翼地打開寶箱，看看裡面有什麼。", staminaChange: 10, waterChange: 5, outcomeText: `寶箱裡裝滿了能量棒🍫和一瓶清涼的山泉水💧！真是意外之喜！發現寶箱的同學精神一振！${teacherName}：「看來冒險還是有回報的！」`, giveItem: ['energyBar', 'waterBottle'], collaborationPointsAwarded: 5, effectScope: 'all_active' }, // 獎勵協作分數
-                    { text: "寶箱可能有陷阱！還是別碰比較好。", staminaChange: -5, waterChange: 0, outcomeText: `寶箱消失了。什麼都沒發生，但大家有點失望。😶` }
-                ]
-            },
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "走著走著，發現路邊有一個遺落的背包🎒！裡面似乎有東西。",
-                options: [ // staminaChange 8, OK
-                    { text: "打開背包，看看裡面是什麼。", staminaChange: 8, waterChange: 5, outcomeText: `背包裡有零食🍪和一張舊地圖🗺️！發現的同學感到很幸運！`, giveItem: ['snack', 'map'] },
-                    { text: "不拿別人的東西，繼續趕路。", staminaChange: -2, waterChange: 0, outcomeText: `大家繼續前進，沒有理會遺落的背包。`, effectScope: 'all_active'}
-                ]
-            },
-            // 動物/自然類事件
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "一群調皮的猴子🐒突然跳出來，對著大家吱吱叫，還想搶走 [studentName] 的背包！",
-                options: [
-                    { text: "趕快大聲驅趕猴子！🗣️", staminaChange: -8, waterChange: -5, outcomeText: `猴子嚇了一跳跑掉了，但 [studentName] 和幫忙驅趕的同學也因此耗費了點力氣。💦`, collaborationPointsAwarded: 2 }, // staminaChange -12 -> -8
-                    { text: "拿出零食🍪丟給猴子，分散牠們的注意力。", staminaChange: 8, waterChange: 0, outcomeText: `猴子們開心地吃著零食，大家趁機溜走了！😇 使用零食的 [studentName] 感到輕鬆不少，全班同學也鬆了一口氣！`, requiredItem: 'snack', consumeItem: 'snack', collaborationPointsAwarded: 5, effectScope: 'all_active' } // 獎勵協作分數
-                ],
-                needsStudent: true
-            },
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "森林深處傳來一陣奇特的聲音，好像有什麼在呼喚…會是寶藏還是危險？🤔",
-                options: [
-                    { text: "跟隨聲音，一探究竟！🕵️‍♀️", staminaChange: 12, waterChange: 8, outcomeText: `原來是一處清澈的隱藏山泉💧，大家喝了口泉水，精神為之一振！每個人的體力水分都增加了！`, effectScope: 'all_active' }, // staminaChange 12, OK
-                    { text: "安全為上，不要理會，繼續前進。🚶‍♂️", staminaChange: -3, waterChange: -2, outcomeText: `聲音漸漸消失了，大家繼續前進。沒有任何變化，但每個人都有點口渴。`, effectScope: 'all_active' } // waterChange -2, OK
-                ]
-            },
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "一條毒蛇🐍突然從草叢中竄出，擋住了去路！",
-                options: [
-                    { text: "大聲叫喊，試圖嚇跑牠。", staminaChange: -8, waterChange: -5, outcomeText: `毒蛇只是縮了一下，然後變得更具攻擊性。在場的同學嚇得體力下降。` }, // staminaChange -12 -> -8
-                    { text: "使用驅蟲劑🧴，嘗試驅趕牠。", staminaChange: 8, waterChange: 0, outcomeText: `驅蟲劑的特殊氣味讓毒蛇感到不適，牠迅速溜走了！使用驅蟲劑的同學鬆了一口氣。`, requiredItem: 'insectRepellent', consumeItem: 'insectRepellent' }
-                ]
-            },
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "一隻小動物被捕獸夾困住了，發出痛苦的哀嚎。救還是不救？🥺",
-                options: [
-                    { text: "小心地解救小動物。❤️", staminaChange: -8, waterChange: -8, outcomeText: `雖然耗費了體力，但成功解救了小動物，參與救援的同學感到非常欣慰。`, collaborationPointsAwarded: 3 }, // staminaChange -15 -> -8
-                    { text: "使用急救包🩹，為小動物處理傷口後放生。", staminaChange: 10, waterChange: 0, outcomeText: `小動物感激地離開，你們的善舉讓參與的同學士氣大振！`, requiredItem: 'firstAidKit', consumeItem: 'firstAidKit', collaborationPointsAwarded: 8 }
-                ]
-            },
-            // 環境/地形類事件
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "一棵巨大的古樹🌳被茂密的藤蔓纏繞，似乎擋住了某些東西。藤蔓縫隙間隱約閃爍著光芒！",
-                options: [
-                    { text: "合力撥開藤蔓，看看裡面有什麼！", staminaChange: -8, waterChange: -5, outcomeText: `參與的同學費力地撥開藤蔓，找到了一瓶驅蟲劑🧴！但他們也累壞了。`, giveItem: ['insectRepellent'] }, // staminaChange -15 -> -8
-                    { text: "使用求生繩索🎗️，試圖拉開藤蔓。", staminaChange: 8, waterChange: 0, outcomeText: `用繩索巧妙地拉開藤蔓，發現裡面藏著一個急救包🩹！使用繩索的同學感到很得意。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope', giveItem: ['firstAidKit'] }
-                ]
-            },
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "前方出現一片茂密的荊棘林，寸步難行。尖銳的刺讓人望而卻步！🌵",
-                options: [
-                    { text: "小心翼翼地穿過，避免被刺傷。", staminaChange: -8, waterChange: -7, outcomeText: `大家小心通過，雖然沒受傷，但每個人的體力水分都消耗不少。`, effectScope: 'all_active' }, // staminaChange -15 -> -8
-                    { text: "使用求生繩索🎗️，試圖綁開一條路。", staminaChange: 5, waterChange: 0, outcomeText: `用繩索巧妙地撥開荊棘，開闢了安全通道！使用繩索的同學體力小幅恢復。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope' }
-                ]
-            },
-            // 天氣/搞笑類事件
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "天空突然烏雲密布，一陣雷陣雨⛈️傾盆而下！",
-                options: [
-                    { text: "趕快找地方避雨！☔", staminaChange: -8, waterChange: -8, outcomeText: `大家躲在樹下，雖然沒被淋濕，但每個人的時間和體力都消耗了。`, effectScope: 'all_active' }, // staminaChange -10 -> -8
-                    { text: "穿上雨衣，繼續冒險！🏃‍♀️", staminaChange: -8, waterChange: -8, outcomeText: `雖然有雨衣，但在雨中行進非常耗費每個人的體力！`, effectScope: 'all_active' } // staminaChange -15 -> -8, waterChange -8, OK
-                ]
-            },
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: "突然，一隻頑皮的松鼠🐿️跳出來，搶走了[studentName]的零食🍪！",
-                options: [
-                    { text: "算了，讓牠吃吧！大家看著松鼠搞笑的樣子，都笑了。😂", staminaChange: 2, waterChange: 0, outcomeText: `大家哄堂大笑！😂 全班同學精神愉悅，體力+2！[studentName]表示：「我的零食啦！🍪」`, needsStudent: true, effectScope: 'all_active' }
-                ]
-            },
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: `${teacherName}突然講了一個超級冷的笑話…🥶 「有一隻豬牠很熱，就…中暑了！」`,
-                options: [
-                    { text: "哈哈哈…好冷喔…🤣", staminaChange: 1, waterChange: 0, outcomeText: `同學們集體黑線…但笑一笑還是好的。😅 全班同學體力小幅增加！`, effectScope: 'all_active' }
-                ]
-            },
-            // 教育任務
-            {
-                stage: "山腳下的迷霧森林 🌳",
-                text: `${teacherName}：「同學們，如果我們沒有地圖，在森林裡該如何辨識方向呢？」🤔`,
-                options: [
-                    { text: "看太陽的方向。☀️", staminaChange: 8, waterChange: 0, outcomeText: `正確！${teacherName}點頭稱讚，大家學到了一課，精神為之一振！`, effectScope: 'all_active' },
-                    { text: "看哪邊樹比較多。", staminaChange: -5, waterChange: -3, outcomeText: `嗯…這個方法不太可靠喔！${teacherName}搖了搖頭，大家的體力微減。`, effectScope: 'all_active' } // staminaChange -5, OK
-                ]
-            },
-             {
-                stage: "山腳下的迷霧森林 🌳",
-                text: `${teacherName}：「在野外看到不認識的植物，我們應該怎麼做？」🌿`,
-                options: [
-                    { text: "不隨意觸摸或採摘。🙅‍♀️", staminaChange: 5, waterChange: 0, outcomeText: `正確！${teacherName}稱讚你們謹慎的態度！`, effectScope: 'all_active' },
-                    { text: "先聞聞看有沒有毒。", staminaChange: -8, waterChange: -3, outcomeText: `這個方法很危險！${teacherName}提醒大家不要輕易嘗試。`, effectScope: 'all_active' } // staminaChange -8, OK
-                ]
-            }
-        ],
-        "path": [
-            // 路線/地形類事件
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: "前方小徑變得濕滑，有一段狹窄的碎石路。怎麼辦？⚠️",
-                options: [
-                    { text: "大家小心翼翼地走，互相扶持。", staminaChange: -8, waterChange: -5, outcomeText: `大家互相幫助，成功通過濕滑路段。🤝 但每個人的體力水分都消耗不小。`, effectScope: 'all_active' }, // staminaChange -8, OK
-                    { text: "讓 [studentName] 先衝過去探路！", staminaChange: -8, waterChange: -8, outcomeText: `[studentName] 雖然很勇敢，但不小心滑了一跤，膝蓋擦傷了！😩 [studentName] 的體力水分下降了！` }, // staminaChange -18 -> -8, waterChange -10 -> -8
-                    { text: "使用急救包🩹處理 [studentName] 的擦傷，並協助通過！", staminaChange: 10, waterChange: 0, outcomeText: `[studentName] 的傷口得到及時處理，使用急救包的同學和 [studentName] 士氣大振，順利通過！`, requiredItem: 'firstAidKit', consumeItem: 'firstAidKit' } // Affects student using kit and the injured
-                ]
-            },
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: "前方突然出現一棵倒塌的大樹🪵，擋住了整條路！怎麼辦？",
-                options: [
-                    { text: "全班一起合作，試著把樹枝推開！💪", staminaChange: -8, waterChange: -7, outcomeText: `大家齊心協力，雖然每個人都費了些力氣，但成功清開了道路！🤝`, collaborationPointsAwarded: 10, effectScope: 'all_active' }, // staminaChange -10 -> -8
-                    { text: "找找看有沒有繞道的小路。迂迴而行。", staminaChange: -8, waterChange: -8, outcomeText: `雖然繞過了倒樹，但多走了不少冤枉路，每個人的體力水分都消耗不少。😅`, effectScope: 'all_active' }, // staminaChange -12 -> -8, waterChange -8, OK
-                    { text: "使用求生繩索🎗️，嘗試固定大樹，開闢安全通道。", staminaChange: 10, waterChange: 0, outcomeText: `利用求生繩索巧妙地固定住大樹，大家安全通過！使用繩索的同學省下了不少力氣。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope' }
-                ]
-            },
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: "一條湍急的河流擋住了去路！河水看起來很深，沒有橋。🌊",
-                options: [
-                    { text: "尋找淺水處，小心涉水過河。", staminaChange: -8, waterChange: -8, outcomeText: `大家小心翼翼地過河，雖然沒有危險，但被冰冷的河水凍得每個人的體力水分大減。🥶`, effectScope: 'all_active' }, // staminaChange -20 -> -8, waterChange -15 -> -8
-                    { text: "使用求生繩索🎗️，搭建臨時的過河通道！", staminaChange: 12, waterChange: 0, outcomeText: `利用繩索成功搭建了安全通道，大家輕鬆過河！使用繩索的同學體力甚至有所恢復。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope', collaborationPointsAwarded: 8 }
-                ]
-            },
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: "前方是萬丈深淵的斷崖！唯一的路徑是一條搖搖欲墜的吊橋。🌉",
-                options: [
-                    { text: "小心通過吊橋。", staminaChange: -8, waterChange: -8, outcomeText: `大家膽戰心驚地通過了吊橋，每個人的體力水分都消耗巨大。`, effectScope: 'all_active' }, // staminaChange -22 -> -8, waterChange -12 -> -8
-                    { text: "使用求生繩索🎗️，加固吊橋後再通過！", staminaChange: 15, waterChange: 0, outcomeText: `用繩索加固了吊橋，大家安全且快速地通過了斷崖！使用繩索的同學感到很自豪。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope' }
-                ]
-            },
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: "前方出現一條岔路，一邊通往平靜的湖泊🏞️，另一邊則是沿著陡峭山脊的山路⛰️。",
-                options: [
-                    { text: "選擇湖泊路線，或許能找到水源。", staminaChange: -5, waterChange: 10, outcomeText: `湖泊風光秀麗，大家補充了水瓶，但路徑稍微遠了一點。每個人的體力略降，水分增加。`, giveItem: ['waterBottle'], effectScope: 'all_active' },
-                    { text: "選擇山脊路線，路程較短但崎嶇。", staminaChange: -8, waterChange: -5, outcomeText: `山脊路線雖然崎嶇，但確實縮短了路程，只是消耗了每個人的更多體力！`, effectScope: 'all_active' } // staminaChange -10 -> -8, waterChange -5, OK
-                ]
-            },
-            // 動物/威脅類事件
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: "突然，一隻大野豬🐗衝了出來，擋住去路！",
-                options: [
-                    { text: "大家手牽手，小聲地繞過去，不要驚動牠。🤫", staminaChange: 5, waterChange: -2, outcomeText: `成功的避開了野豬，全員安全通過。😊 但每個人都費了點時間和水分。`, effectScope: 'all_active' }, // waterChange -2, OK
-                    { text: "讓 [studentName]，你是班上跑最快的！快衝過去嚇跑牠！💨", staminaChange: -8, waterChange: -8, outcomeText: `[studentName] 雖然跑得快，但野豬也不是省油的燈！追得 [studentName] 和附近的同學氣喘吁吁！🥵 他們的體力水分大減！[studentName]：「我快喘不過氣了！」` }, // staminaChange -25 -> -8, waterChange -12 -> -8
-                    { text: "丟出能量棒🍫引開牠的注意。", staminaChange: 10, waterChange: 0, outcomeText: `野豬被能量棒吸引，大家趁機溜走！丟能量棒的同學感到機智。`, requiredItem: 'energyBar', consumeItem: 'energyBar' } // staminaChange 10, OK
-                ]
-            },
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: "一股巨大的嗡嗡聲傳來，一大群惱人的蚊蟲🐝正朝著大家飛來！",
-                options: [
-                    { text: "拿出驅蟲劑🧴噴灑，快速驅散牠們！", staminaChange: 5, waterChange: 0, outcomeText: `防蚊液有效！蚊蟲被驅散，大家鬆了口氣，使用驅蟲劑的同學體力小幅恢復。😌`, requiredItem: 'insectRepellent', consumeItem: 'insectRepellent' },
-                    { text: "瘋狂揮舞雙手，試圖趕走牠們！👋", staminaChange: -18, waterChange: -8, outcomeText: `蚊蟲還是叮了不少包，揮手的同學又癢又累，體力水分下降。😩 [studentName]：「我的手好痠啊！」` }, // waterChange -8, OK
-                    { text: "瘋狂揮舞雙手，試圖趕走牠們！👋", staminaChange: -8, waterChange: -8, outcomeText: `蚊蟲還是叮了不少包，揮手的同學又癢又累，體力水分下降。😩 [studentName]：「我的手好痠啊！」` } // staminaChange -18 -> -8, waterChange -8, OK
-                ]
-            },
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: "一聲低沉的咆哮聲傳來，一隻飢餓的野獸🐻出現在前方！",
-                options: [
-                    { text: "迅速躲藏，避免衝突。", staminaChange: -18, waterChange: -8, outcomeText: `大家躲過了野獸，但每個人的精神都很緊張，體力水分下降。`, effectScope: 'all_active' }, // waterChange -10 -> -8
-                    { text: "丟出零食🍪引開牠的注意。", staminaChange: 10, waterChange: 0, outcomeText: `野獸被零食吸引，大家趁機溜走！丟零食的同學鬆了口氣。`, requiredItem: 'snack', consumeItem: 'snack' } // staminaChange 10, OK
-                ]
-            },
-            // 資源/環境類事件
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: "太陽高掛，烈日炎炎☀️！大家感到口乾舌燥，體力消耗加快。",
-                options: [
-                    { text: "趕快找陰涼處休息，補充水分。", staminaChange: -8, waterChange: 10, outcomeText: `大家找到一片陰涼，補充了水分，精神恢復不少，但耽誤了時間。每個人的體力略降，水分增加。`, giveItem: ['waterBottle'], effectScope: 'all_active' },
-                    { text: "忍著口渴繼續趕路！", staminaChange: -8, waterChange: -8, outcomeText: `硬撐著趕路讓每個人的體力水分都快速流失。😩`, effectScope: 'all_active' }, // staminaChange -15 -> -8, waterChange -15 -> -8
-                    { text: "使用水瓶💧補充水分。", staminaChange: 5, waterChange: 15, outcomeText: `喝了水瓶裡的水，使用水瓶的同學瞬間感到清涼舒暢，體力水分都有恢復！`, requiredItem: 'waterBottle', consumeItem: 'waterBottle' }
-                ]
-            },
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: "走進一個幽靜的山谷，突然聽到奇怪的迴音，似乎有什麼東西在附近。🏞️",
-                options: [
-                    { text: "小心探索，看是否能發現什麼。", staminaChange: 5, waterChange: 8, outcomeText: `發現了一處隱蔽的泉眼，補充了水瓶！探索的同學體力也小幅恢復。`, giveItem: ['waterBottle'] },
-                    { text: "快速通過，避免不必要的麻煩。", staminaChange: -5, waterChange: -2, outcomeText: `大家加快腳步，快速通過山谷。沒有發生特別的事情。`, effectScope: 'all_active' } // staminaChange -5, OK
-                ]
-            },
-            // 教育任務
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: `一位老山神📚現身，祂說：「想通過此路，需回答我的問題！」`,
-                options: [
-                    { text: `${teacherName}：「在野外食物中毒，第一時間該怎麼辦？」(答催吐/求助)`, staminaChange: 15, waterChange: 5, outcomeText: `正確答案是催吐並尋求幫助！山神滿意點頭，贈予補給品！✨ 全班同學體力水分增加！`, effectScope: 'all_active' },
-                    { text: `${teacherName}：「野外迷路時，看到什麼不該碰？」(答毒菇/奇怪的果實)`, staminaChange: 15, waterChange: 5, outcomeText: `正確！遠離不明動植物是野外求生基本原則！山神贈予補給！✨ 全班同學體力水分增加！`, effectScope: 'all_active' }, // staminaChange 15, OK
-                    { text: "隨便猜一個！", staminaChange: -20, waterChange: -8, outcomeText: `答錯了…山神嘆了口氣，給了大家一個小小的懲罰。😔 全班同學體力水分下降！某同學：「下次要好好讀書了！」`, effectScope: 'all_active' } // waterChange -10 -> -8
-                ]
-            },
-            {
-                stage: "蜿蜒的山腰小徑 🚶‍♀️",
-                text: `${teacherName}：「同學們，在野外如何最有效地節約水資源呢？」🤔`,
-                options: [
-                    { text: "避免劇烈運動，減少出汗。", staminaChange: 5, waterChange: 0, outcomeText: `正確！${teacherName}點頭，大家學到寶貴一課，體力小幅恢復！`, effectScope: 'all_active' },
-                    { text: "少量多次飲用。", staminaChange: 5, waterChange: 0, outcomeText: `正確！這有助於身體吸收水分！`, effectScope: 'all_active' },
-                    { text: "直接喝池塘水。", staminaChange: -8, waterChange: -8, outcomeText: `錯！池塘水可能有寄生蟲或細菌，非常危險！大家的體力水分下降！`, effectScope: 'all_active' } // staminaChange -15 -> -8, waterChange -10 -> -8
-                ]
-            }
-        ],
-        "slope": [
-            // 路線/地形類事件
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "攀爬時，一段老舊的繩索⛓️突然出現裂痕！該怎麼辦？",
-                options: [
-                    { text: `不要慌！讓 ${teacherName} 指導，大家小心地一步一步通過。`, staminaChange: -8, waterChange: -5, outcomeText: `${teacherName} 冷靜指揮，大家互相扶持，成功克服難關。💪 但每個人的精力都耗費不少。`, effectScope: 'all_active' }, // staminaChange -10 -> -8, waterChange -5, OK
-                    { text: "別怕！[studentName] 你力氣最大，抓緊繩子，我們一起衝過去！", staminaChange: -8, waterChange: -8, outcomeText: `繩索不堪重負，斷裂了！雖然沒人受傷，但大家嚇出了一身冷汗，並花費更多時間繞道。😱 [studentName] 和附近的同學體力水分大減！[studentName]：「我的心臟快跳出來了！」` }, // staminaChange -35 -> -8, waterChange -18 -> -8
-                    { text: "使用求生繩索🎗️加固，確保安全！", staminaChange: 15, waterChange: 0, outcomeText: `利用結實的求生繩索加固了老舊的繩子，大家安全無虞地攀爬，使用繩索的同學體力大幅恢復！`, requiredItem: 'survivalRope', consumeItem: 'survivalRope' }
-                ]
-            },
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "前方出現了一段幾乎垂直的岩壁，看起來非常難以攀爬！😨",
-                options: [
-                    { text: `仔細規劃路線，利用 ${teacherName} 教的攀爬技巧。`, staminaChange: -8, waterChange: -8, outcomeText: `大家憑藉著毅力和聰明才智，一步步克服了岩壁！🙌 但每個人的體力水分都消耗不小！`, effectScope: 'all_active' }, // staminaChange -20 -> -8, waterChange -10 -> -8
-                    { text: "試圖強行突破，看看能不能爬上去！", staminaChange: -8, waterChange: -8, outcomeText: `嘗試強攻岩壁失敗，反而耗費了大量體力水分，還差點有人受傷！😬 參與強攻的同學尤其疲憊。` }, // staminaChange -30 -> -8, waterChange -15 -> -8
-                    { text: "吃下能量棒🍫，補充體力再攀爬！", staminaChange: 12, waterChange: 0, outcomeText: `能量棒讓吃下的同學精神大振！攀爬變得輕鬆許多，體力大幅恢復。`, requiredItem: 'energyBar', consumeItem: 'energyBar' },
-                    { text: "使用求生繩索🎗️，搭建臨時攀爬點！", staminaChange: 15, waterChange: 0, outcomeText: `利用繩索，大家迅速建立了安全攀爬點，輕鬆通過！使用繩索的同學感到非常有用。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope', collaborationPointsAwarded: 8 }
-                ]
-            },
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "前方一處看似穩固的峭壁突然開始崩塌！腳下碎石滾落，情況危急！🚧",
-                options: [
-                    { text: "迅速判斷，找到最安全的跳躍點！🏃‍♀️", staminaChange: -8, waterChange: -8, outcomeText: `大家驚險地跳了過去，雖然成功但每個人的體力水分都耗費不少，心跳加速！`, effectScope: 'all_active' }, // staminaChange -25 -> -8, waterChange -12 -> -8
-                    { text: "拿出求生繩索🎗️，快速固定並滑下！", staminaChange: 10, waterChange: 0, outcomeText: `利用求生繩索，大家有條不紊地通過了崩塌區，安全又省力！使用繩索的同學體力小幅恢復。`, requiredItem: 'survivalRope', consumeItem: 'survivalRope' },
-                    { text: "打開地圖🗺️，尋找是否有其他安全通道。", staminaChange: 12, waterChange: 0, outcomeText: `地圖清晰標示了一條隱蔽的山路，成功避開了崩塌區！查看地圖的同學感到欣慰。`, requiredItem: 'map', consumeItem: 'map' }
-                ]
-            },
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "聽到前方傳來隆隆聲，似乎有滑坡的跡象！必須立刻做出反應！",
-                options: [
-                    { text: "快速尋找掩蔽物躲藏！", staminaChange: -8, waterChange: -8, outcomeText: `大家雖然躲開了滑坡，但過程驚險，每個人的體力水分都耗費了大量。`, effectScope: 'all_active' }, // staminaChange -18 -> -8, waterChange -8, OK
-                    { text: "利用地圖🗺️，尋找安全繞行路線！", staminaChange: 10, waterChange: 0, outcomeText: `地圖顯示了一條隱蔽且安全的繞行小路，大家順利避開了危險！查看地圖的同學鬆了口氣。`, requiredItem: 'map', consumeItem: 'map' }
-                ]
-            },
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "路旁出現一個深不見底的漆黑洞穴，裡面傳來陣陣陰冷的風。🦇",
-                options: [
-                    { text: "好奇心驅使，進去看看！🔦", staminaChange: -8, waterChange: -8, outcomeText: `洞穴深處什麼都沒有，只讓進去的同學感到一陣陰森，並消耗了體力水分。` }, // staminaChange -15 -> -8, waterChange -8, OK
-                    { text: "使用求生繩索🎗️，探索洞穴深處，或許有寶藏？", staminaChange: 10, waterChange: 5, outcomeText: `利用繩索探索，意外發現了一處寶藏，裡面有額外的能量棒和水！探索的同學精神大振。`, requiredItem: 'survivalRope', giveItem: ['energyBar', 'waterBottle'] },
-                    { text: "使用急救包🩹，測試洞穴內的空氣是否安全！", staminaChange: 5, waterChange: 0, outcomeText: `急救包的儀器顯示洞穴空氣無毒，但太深了不適合深入。使用急救包的同學發現了一瓶驅蟲劑！`, requiredItem: 'firstAidKit', giveItem: ['insectRepellent'] }
-                ]
-            },
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "前方又出現了一條新的岔路，一邊是沿著瀑布的濕滑小徑💦，另一邊是直接穿越懸崖的峭壁⛰️。",
-                options: [
-                    { text: "選擇瀑布小徑，或許風景不錯。", staminaChange: -8, waterChange: -5, outcomeText: `瀑布小徑濕滑難行，雖然風景優美，但每個人的體力水分都消耗不少。`, effectScope: 'all_active' }, // staminaChange -10 -> -8, waterChange -5, OK
-                    { text: "選擇懸崖峭壁，看起來更直接。", staminaChange: -8, waterChange: -8, outcomeText: `懸崖峭壁雖然直接，但非常陡峭，需要耗費每個人的更多體力！`, effectScope: 'all_active' }, // staminaChange -15 -> -8, waterChange -8, OK
-                    { text: "使用地圖🗺️，看看哪條路更安全或有隱藏好處。", staminaChange: 5, waterChange: 0, outcomeText: `地圖顯示懸崖峭壁後有一處避風港，大家決定走峭壁！查看地圖的同學感到安心。`, requiredItem: 'map', consumeItem: 'map' }
-                ]
-            },
-            // 動物/威脅類事件
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "一隻巨大的野熊🐻‍❄️攔在路上，看起來非常飢餓且具有攻擊性！",
-                options: [
-                    { text: "丟出能量棒🍫，吸引牠的注意力並逃跑！", staminaChange: -8, waterChange: -8, outcomeText: `野熊被能量棒吸引，大家趁機迅速逃離！丟能量棒的同學感到緊張，但成功了。`, requiredItem: 'energyBar', consumeItem: 'energyBar' }, // staminaChange -15 -> -8, waterChange -10 -> -8
-                    { text: "嘗試繞道，但路徑非常危險。", staminaChange: -8, waterChange: -8, outcomeText: `繞道過程驚險萬分，耗費了每個人的巨大體力水分。`, effectScope: 'all_active' } // staminaChange -25 -> -8, waterChange -15 -> -8
-                ]
-            },
-            // 資源/環境類事件
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "天氣驟變！一場突如其來的暴風雪❄️開始席捲山坡，能見度極低，氣溫驟降！",
-                options: [
-                    { text: "盡快找地方避風雪，等待天氣好轉。", staminaChange: -8, waterChange: -8, outcomeText: `大家躲在岩石後，雖然避開了最猛烈的風雪，但寒冷和恐懼仍讓每個人的體力水分快速流失。🥶`, effectScope: 'all_active' }, // staminaChange -30 -> -8, waterChange -15 -> -8
-                    { text: "打開地圖🗺️，嘗試尋找最近的避難小屋！", staminaChange: 8, waterChange: 0, outcomeText: `地圖上標示著一處隱蔽的避難小屋！大家成功躲進小屋，避免了最糟糕的情況。查看地圖的同學立了大功。`, requiredItem: 'map', consumeItem: 'map' },
-                    { text: "吃下能量棒🍫，補充體力抵禦寒冷。", staminaChange: 10, waterChange: 0, outcomeText: `能量棒讓吃下的同學身體發熱，暫時抵禦了嚴寒！`, requiredItem: 'energyBar', consumeItem: 'energyBar' }
-                ]
-            },
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "遇到一位同樣在爬山，但嚴重脫水的老爺爺！他看起來非常虛弱。👴💧",
-                options: [
-                    { text: "將水瓶💧裡的水分給老爺爺。", staminaChange: -5, waterChange: -8, outcomeText: `老爺爺恢復了精神，並感謝你們！分享水瓶的同學雖然水分大減，但助人為樂讓其心靈得到慰藉。😊`, requiredItem: 'waterBottle', consumeItem: 'waterBottle', collaborationPointsAwarded: 10 }, // staminaChange -5, OK, waterChange -20 -> -8
-                    { text: "很抱歉，我們的水也不多了…", staminaChange: -10, waterChange: 0, outcomeText: `老爺爺無奈地離開，大家感到一陣內疚，每個人的體力都微幅下降。😔`, effectScope: 'all_active' }
-                ]
-            },
-            // 人物/搞笑類事件
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "陡坡旁，一朵從未見過的美麗花朵🌸吸引了大家的目光。",
-                options: [
-                    { text: "欣賞一下就好，不要採摘，保護自然生態。💖", staminaChange: 3, waterChange: 0, outcomeText: `花朵散發出治癒的光芒，讓欣賞的同學精神一振。😌 體力小幅增加！` },
-                    { text: `哇！好漂亮！[studentName]，快摘下來送給 ${teacherName}！🎁`, staminaChange: -8, waterChange: -5, outcomeText: `花朵枯萎了，空氣中瀰漫著一股奇怪的氣味，讓 [studentName] 和 ${teacherName} 感到有點不舒服。🤢 他們的體力水分下降！` }, // staminaChange -12 -> -8, waterChange -5, OK
-                    { text: "使用急救包🩹，分析花朵是否可用於恢復！", staminaChange: 5, waterChange: 0, outcomeText: `急救包顯示這朵花有微弱的治癒效果！使用急救包的同學士氣小幅提升。`, requiredItem: 'firstAidKit', consumeItem: 'firstAidKit' }
-                ],
-                needsStudent: true
-            },
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "突然，一隻頑皮的松鼠🐿️跳出來，搶走了[studentName]的零食🍪！",
-                options: [
-                    { text: "算了，讓牠吃吧！大家看著松鼠搞笑的樣子，都笑了。😂", staminaChange: 2, waterChange: 0, outcomeText: `大家哄堂大笑！😂 全班同學體力+2 (精神愉悅)！[studentName]表示：「我的零食啦！🍪」`, needsStudent: true, effectScope: 'all_active' }
-                ]
-            },
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: `${teacherName}突然講了一個超級冷的笑話…🥶 「有一隻豬牠很熱，就…中暑了！」`,
-                options: [
-                    { text: "哈哈哈…好冷喔…🤣", staminaChange: 1, waterChange: 0, outcomeText: `同學們集體黑線…但笑一笑還是好的。😅 全班同學體力小幅增加！`, effectScope: 'all_active' }
-                ]
-            },
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: `[studentName] 同學不小心在濕滑的岩石上扭到了腳，臉色發白！😩`,
-                options: [
-                    { text: "趕快停下來休息，簡單處理傷口。", staminaChange: -8, waterChange: -8, outcomeText: `大家停下來照顧 [studentName]，雖然處理了傷口，但耽誤了時間，[studentName] 和照顧的同學體力水分都下降了。` }, // staminaChange -15 -> -8, waterChange -8, OK
-                    { text: "拿出急救包🩹，進行專業處理！", staminaChange: 10, waterChange: 0, outcomeText: `急救包中的繃帶和藥品迅速緩解了 [studentName] 的疼痛，[studentName] 和使用急救包的同學士氣大振！`, requiredItem: 'firstAidKit', consumeItem: 'firstAidKit' }
-                ],
-                needsStudent: true
-            },
-            // 教育任務
-            {
-                stage: "陡峭的試煉之坡 🧗",
-                text: "一隻看似睿智的老貓頭鷹🦉停在樹上，牠說：「年輕的登山者啊，若想通過，請回答我的謎題：『身體是黑的，心卻是紅的，是什麼？』」",
-                options: [
-                    { text: "答案是：西瓜！🍉", staminaChange: 15, waterChange: 8, outcomeText: `答對了！老貓頭鷹滿意地點點頭，一束光芒指引了前進的道路！✨ 全班同學體力水分大幅增加！`, collaborationPointsAwarded: 10, effectScope: 'all_active' },
-                    { text: `答案是：黑森林蛋糕！🍰 (${teacherName}：「別鬧了！」)`, staminaChange: -8, waterChange: -8, outcomeText: `老貓頭鷹嘆了口氣，大家因此受到了一點考驗，每個人的體力水分都下降。😔 某同學：「我好想吃蛋糕…」`, effectScope: 'all_active' } // staminaChange -20 -> -8, waterChange -10 -> -8
-                ]
-            }
-        ],
-        "climax": [
-            {
-                stage: "風光無限的山頂 ⛰️",
-                text: `最後一段路了！大家都感到非常疲憊，但山頂就在眼前！${teacherName}：「堅持住！我們快到了！」`,
-                options: [
-                    { text: "全員衝刺，向山頂進發！", staminaChange: 15, waterChange: 10, outcomeText: `全班同學互相加油打氣，爆發出最後的能量！💪 成功登頂！`, collaborationPointsAwarded: 15, effectScope: 'all_active' }
-                ]
-            }
-        ]
-    };
+    // 遊戲事件資料庫，按階段分類 - REMOVED as data is now in separate files
+    // const eventsByStage = { ... };
 
-    let currentEventSequence = []; // 每次遊戲都會重新生成的事件序列
+    let currentEventSequence = []; // 每次遊戲都會重新生成的事件序列 // Moved inside IIFE
 
     // 隨機打亂陣列順序的輔助函數 (Fisher-Yates shuffle)
     function shuffleArray(array) {
@@ -528,21 +135,27 @@
     // 初始化遊戲事件序列
     function initializeEventSequence() {
         currentEventSequence = [];
-        currentEventSequence.push(eventsByStage.intro[0]); // 加入開場事件
+        console.log("Before accessing gameEventsIntro:", window.gameEventsIntro); // DEBUG
+        if (!window.gameEventsIntro || window.gameEventsIntro.length === 0) {
+            console.error("ERROR: gameEventsIntro is not defined or is empty! Check if events-intro.js loaded correctly and has no errors.");
+            alert("遊戲初始化錯誤：無法載入開場事件。請檢查瀏覽器控制台獲取更多資訊。");
+            return; // Prevent further execution if critical data is missing
+        }
+        currentEventSequence.push(window.gameEventsIntro[0]);
 
         // 從各階段事件池中隨機選取更多事件加入序列
         // 固定總關卡數為30 (1 intro + 28 main stages + 1 climax)
         // 將28個主要關卡分配給三個階段
         const numForestEvents = 9;
         const numPathEvents = 9;
-        const numSlopeEvents = 10; // 9 + 9 + 10 = 28
-
-        currentEventSequence = currentEventSequence.concat(shuffleArray([...eventsByStage.forest]).slice(0, Math.min(eventsByStage.forest.length, numForestEvents)));
-        currentEventSequence = currentEventSequence.concat(shuffleArray([...eventsByStage.path]).slice(0, Math.min(eventsByStage.path.length, numPathEvents)));
-        currentEventSequence = currentEventSequence.concat(shuffleArray([...eventsByStage.slope]).slice(0, Math.min(eventsByStage.slope.length, numSlopeEvents)));
+const numSlopeEvents = 9;  // 新增斜坡階段事件數量定義
+        currentEventSequence = currentEventSequence.concat(shuffleArray([...window.gameEventsForest]).slice(0, numForestEvents));
+        currentEventSequence = currentEventSequence.concat(shuffleArray([...window.gameEventsPath]).slice(0, numPathEvents));
+        currentEventSequence = currentEventSequence.concat(shuffleArray([...window.gameEventsSlope]).slice(0, numSlopeEvents));
+        currentEventSequence = currentEventSequence.concat(shuffleArray([...window.gameEventsSlope]).slice(0, Math.min(window.gameEventsSlope.length, numSlopeEvents)));
 
         // console.log("Total events after main stages:", currentEventSequence.length); // 應該是 1 (intro) + 28 = 29
-        currentEventSequence.push(eventsByStage.climax[0]); // 加入結尾事件 (到達山頂前)
+        currentEventSequence.push(window.gameEventsClimax[0]); // 加入結尾事件 (到達山頂前)
 
         sequenceIndex = 0; // 重設事件索引
     }
@@ -590,6 +203,7 @@
     // 更新 UI 顯示 (體力條、水分條、進度文字、物品欄)
     function updateUI() {
         // 體力更新
+        // NOTE: INITIAL_STAMINA and INITIAL_WATER are inside the IIFE, but used here. They should also be moved outside or into a config.js.
         const activeStudents = students.filter(s => s.active);
         const avgStamina = activeStudents.length > 0 ? activeStudents.reduce((sum, s) => sum + s.stamina, 0) / activeStudents.length : 0;
         const avgWater = activeStudents.length > 0 ? activeStudents.reduce((sum, s) => sum + s.water, 0) / activeStudents.length : 0;
@@ -997,6 +611,7 @@
     // 處理選項選擇
     function handleOption(selectedOption, namesInOptionText) {
         let outcomeZusatz = ""; // Additional text for outcome if students faint
+        // NOTE: WATER_BOTTLE_RECOVERY_AMOUNT is inside the IIFE, but used here. It should also be moved outside or into a config.js.
         let waterBottleRecipientName = null; // To store the name of the student who got a water bottle and immediate bonus
 
         const willWinNext = (sequenceIndex + 1) >= currentEventSequence.length;
@@ -1149,6 +764,7 @@
     // 檢查遊戲狀態 (勝利或失敗)
     function checkGameStatus() {
         const activeStudentCount = students.filter(s => s.active).length;
+        // NOTE: PHOTO_BASE_PATH is inside the IIFE, but used here. It should also be moved outside or into a config.js.
         console.log(`檢查遊戲狀態: 活躍學生數=${activeStudentCount}, 當前事件索引=${sequenceIndex}, 總事件數=${currentEventSequence.length}`); // 新增 log
         if (activeStudentCount === 0) {
             console.log("所有學生已倒下，準備顯示失敗彈窗..."); // 新增 log
@@ -1200,6 +816,7 @@
     // 重置遊戲並隱藏彈出視窗
     function resetGame() {
         initializeStudentStats(); // Resets all students' stamina, water, and active status
+        // NOTE: INITIAL_STAMINA and INITIAL_WATER are inside the IIFE, but used in initializeStudentStats. They should also be moved outside or into a config.js.
         initializeInventory(); // 重置物品欄
         initializeEventSequence(); // 重新初始化事件序列
         totalCollaborationScore = 0; // 重置協作分數
@@ -1242,4 +859,5 @@
     // 初始化 UI 顯示 (初次載入時)
     initializeInventory(); // Ensure inventory is set before first UI update if game not started
     updateUI();
+
 })(); // IIFE End

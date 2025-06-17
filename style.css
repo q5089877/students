@@ -10,8 +10,7 @@ body {
 
 /* For item pickup/highlight */
 .animate-pulse-item {
-    animation: pulse-item-animation 0.8s ease-i(索引):64
- cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installationn-out;
+    animation: pulse-item-animation 0.8s ease-in-out;
 }
 
 @keyframes pulse-item-animation {
