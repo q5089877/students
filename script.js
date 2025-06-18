@@ -117,7 +117,7 @@ let unlockedPhotos = new Set();
 const POINTS_PER_PHOTO = 10;
 // Define the base path for photos
 // Make sure this path is correct relative to your HTML file or server root
-const PHOTO_BASE_PATH = "photos/"; // Example: assuming photos are in a 'photos' folder at the root
+const PHOTO_BASE_PATH = "photos/life_photos/"; // Example: assuming photos are in a 'photos' folder at the root
 
 // 初始化學生狀態
 function initializeStudentStats() {
@@ -324,8 +324,13 @@ function checkGameStatus() {
     }
     if (sequenceIndex >= currentEventSequence.length) {
         playSound(audioGameWin);
-        showPhotoUnlockNotification(PHOTO_BASE_PATH+"end.jpg","通關紀念！",false);
-        closePhotoPopupButton.addEventListener('click', ()=>{ /* 省略 */ },{once:true});
+        // Show the end game photo. The general event listener for closePhotoPopupButton
+        // (added in DOMContentLoaded) will handle closing it and then showing the
+        // final win popup.
+        showPhotoUnlockNotification(PHOTO_BASE_PATH + "end.jpg", "通關紀念！", false);
+        // The problematic/empty event listener that was here has been removed.
+        // closePhotoPopupButton.addEventListener('click', ()=>{ /* 省略 */ },{once:true}); // REMOVED
+
         return true;
     }
     return false;
@@ -808,6 +813,23 @@ window.addEventListener('DOMContentLoaded', () => {
   unlockedPhotoImg    = document.getElementById('unlockedPhotoImg');
   unlockedPhotoName   = document.getElementById('unlockedPhotoName');
   closePhotoPopupButton = document.getElementById('closePhotoPopupButton');
+
+  // Add a general event listener for the photo popup close button
+  if (closePhotoPopupButton) {
+    closePhotoPopupButton.addEventListener('click', () => {
+        const imgSrc = unlockedPhotoImg.src; // Get src BEFORE it's cleared by hidePhotoUnlockNotification
+        hidePhotoUnlockNotification(); // Hide the photo popup
+
+        // If the closed photo was the "end.jpg" (win condition),
+        // then show the final game win popup.
+        if (imgSrc && imgSrc.includes(PHOTO_BASE_PATH + "end.jpg") && sequenceIndex >= currentEventSequence.length) {
+            const teacher = window.teacherName || "老師"; // Ensure teacherName is defined
+            showPopup("遊戲勝利！🎉",
+                `恭喜所有同學在 ${teacher} 的帶領下成功登頂『智慧之山』！你們是最棒的！<br>總協作分數: ${totalCollaborationScore}`);
+        }
+    });
+  }
+
 
   audioClick        = document.getElementById('audioClick');
   audioPositive     = document.getElementById('audioPositive');
