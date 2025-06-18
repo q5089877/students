@@ -76,7 +76,7 @@ const ROLES = {
 let welcomeScreen,
     gamePlayScreen,
     startButton,
-    playerSelect, roleSelect,
+    playerSelect, roleSelect, roleInfoElem, // Added roleInfoElem
     roleBadge, skillBtn,
     staminaValueElem, staminaBarElem,
     waterValueElem,   waterBarElem,
@@ -785,6 +785,7 @@ window.addEventListener('DOMContentLoaded', () => {
   startButton        = document.getElementById('startButton');
   playerSelect       = document.getElementById('playerSelect');
   roleSelect         = document.getElementById('roleSelect');
+  roleInfoElem       = document.getElementById('roleInfo'); // Get the new element
   roleBadge          = document.getElementById('roleBadge');
   skillBtn           = document.getElementById('roleSkillBtn');
 
@@ -966,20 +967,56 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // —— 4. 定義角色徽章更新函式 ——
   function refreshRoleBadge() {
-    if (!selectedRole) {
-      roleBadge.classList.add('hidden');
+    // roleInfoElem is for "Student Name (Role Name)"
+    // roleBadge is for skill status "✨ 未用" or "✅ 已用"
+
+    if (!selectedStudent || !selectedRole) {
+        // Hide all related elements and clear their content
+        if (roleInfoElem) {
+            roleInfoElem.textContent = '';
+            roleInfoElem.classList.add('hidden'); // Explicitly hide
+        }
+        if (roleBadge) {
+            roleBadge.textContent = '';
+            roleBadge.classList.add('hidden');
+        }
+        if (skillBtn) {
+            skillBtn.classList.add('hidden');
+        }
     } else {
-      const r = ROLES[selectedRole];
-      if (r) {
-          roleBadge.textContent =
-            `${roleSkillUsed ? '✅' : '✨'} ${r.name} · ${roleSkillUsed ? '已用' : '未用'}`;
-          roleBadge.classList.remove('hidden');
-          skillBtn.classList.remove('hidden'); // 技能按鈕也在此時顯示
-          skillBtn.disabled = roleSkillUsed; // 如果技能已用，則禁用按鈕
-      } else {
-          roleBadge.classList.add('hidden');
-          skillBtn.classList.add('hidden');
-      }
+        const roleData = ROLES[selectedRole];
+        if (roleData) {
+            // Populate and show Student Name (Role Name)
+            if (roleInfoElem) {
+                roleInfoElem.textContent = `${selectedStudent} (${roleData.name})`;
+                roleInfoElem.classList.remove('hidden'); // Show
+            }
+
+            // Populate and show Skill Status in roleBadge
+            if (roleBadge) {
+                roleBadge.textContent = `${roleSkillUsed ? '✅ 已用' : '✨ 未用'}`;
+                roleBadge.classList.remove('hidden'); // Show
+            }
+
+            // Show and set state for Skill Button
+            if (skillBtn) {
+                skillBtn.classList.remove('hidden');
+                skillBtn.disabled = roleSkillUsed;
+            }
+        } else {
+            // Fallback if roleData is not found
+            if (roleInfoElem) {
+                roleInfoElem.textContent = '';
+                roleInfoElem.classList.add('hidden');
+            }
+            if (roleBadge) {
+                roleBadge.textContent = '';
+                roleBadge.classList.add('hidden');
+            }
+            if (skillBtn) {
+                skillBtn.classList.add('hidden');
+            }
+        }
     }
   }
   window.refreshRoleBadge = refreshRoleBadge; // Expose globally if needed

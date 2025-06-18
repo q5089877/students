@@ -169,8 +169,12 @@
       <!-- 標題 + 徽章 -->
       <div class="flex justify-between items-center">
         <h2 class="text-xl font-semibold text-gray-800">全班狀態</h2>
-        <span id="roleBadge"
-              class="hidden bg-yellow-100 text-yellow-800 font-semibold py-1 px-3 rounded-full shadow-sm"></span>
+        <!-- Container for player name, role, and skill status -->
+        <div class="flex items-center space-x-2">
+          <span id="roleInfo" class="text-md font-semibold text-gray-700"></span> <!-- Will be populated by JS: "學生名 (角色名)" -->
+          <span id="roleBadge"
+                class="hidden bg-yellow-100 text-yellow-800 text-sm font-semibold py-1 px-2 rounded-full shadow-sm"></span> <!-- Will be populated by JS: "✨ 未用" or "✅ 已用" -->
+        </div>
       </div>
 
       <div class="border-t border-gray-300"></div>
