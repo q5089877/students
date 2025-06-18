@@ -117,7 +117,7 @@ let unlockedPhotos = new Set();
 const POINTS_PER_PHOTO = 10;
 // Define the base path for photos
 // Make sure this path is correct relative to your HTML file or server root
-const PHOTO_BASE_PATH = "photos/life_photos/"; // Example: assuming photos are in a 'photos' folder at the root
+const PHOTO_BASE_PATH = "images/life_photos/"; // Example: assuming photos are in a 'photos' folder at the root
 
 // 初始化學生狀態
 function initializeStudentStats() {
