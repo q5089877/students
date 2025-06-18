@@ -67,7 +67,6 @@ window.gameEventsPath = [
         text: "一股巨大的嗡嗡聲傳來，一大群惱人的蚊蟲🐝正朝著大家飛來！",
         options: [
             { text: "拿出驅蟲劑🧴噴灑，快速驅散牠們！", staminaChange: 5, waterChange: 0, outcomeText: `防蚊液有效！蚊蟲被驅散，大家鬆了口氣，使用驅蟲劑的同學體力小幅恢復。😌`, requiredItem: 'insectRepellent', consumeItem: 'insectRepellent' },
-            { text: "瘋狂揮舞雙手，試圖趕走牠們！👋", staminaChange: -18, waterChange: -8, outcomeText: `蚊蟲還是叮了不少包，揮手的同學又癢又累，體力水分下降。😩 [studentName]：「我的手好痠啊！」` },
             { text: "瘋狂揮舞雙手，試圖趕走牠們！👋", staminaChange: -8, waterChange: -8, outcomeText: `蚊蟲還是叮了不少包，揮手的同學又癢又累，體力水分下降。😩 [studentName]：「我的手好痠啊！」` }
         ]
     },

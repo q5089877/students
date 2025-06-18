@@ -1,7 +1,7 @@
 // ==== 全域常數設定 ===================================================
 // 遊戲變數初始化
-const INITIAL_STAMINA = 60; // 全班共享體力值上限及初始值
-const INITIAL_WATER = 60; // 全班共享水分值上限及初始值
+const INITIAL_STAMINA = 65; // 全班共享體力值上限及初始值
+const INITIAL_WATER = 65; // 全班共享水分值上限及初始值
 const PER_TURN_STAMINA_COST = 2; // 每回合固定消耗體力
 const PER_TURN_WATER_COST = 1;   // 每回合固定消耗水分
 
@@ -14,7 +14,7 @@ const HIGH_STUDENT_RESOURCE_THRESHOLD_PERCENT = 70; // 學生單項資源高閾�
 const LOW_STUDENT_RESOURCE_THRESHOLD_PERCENT = 30;  // 學生單項資源低閾值百分比
 
 // 持續時間設定 (毫秒)
-const OUTCOME_DISPLAY_DURATION_MS = 2800; // 顯示結果後等待的時間
+const OUTCOME_DISPLAY_DURATION_MS = 250; // 顯示結果後等待的時間
 const ITEM_PULSE_ANIMATION_MS = 800;     // 物品獲得時的脈衝動畫時間
 
 // 物品效果數值
@@ -42,22 +42,22 @@ let photosUnlockedThisSession = 0;
 // === 角色系統 初始設定 ===
 let selectedStudent = null;
 let selectedRole    = null;
-let roleSkillUsed   = false;
+// let roleSkillUsed   = false; // Replaced by currentUses in ROLES.active
 let rescueTriggered = false;
 let navigatorMapBonusActive = false; // Flag for Navigator's map skill
 
 const ROLES = {
     staminaSupporter: {
         name: '體力支援者',
-        active: { type: 'stamina', amount: 10 } // 技能效果：恢復 10 點體力
+        active: { type: 'stamina', amount: 8, initialUses: 2 }
     },
     waterSupporter: {
         name: '水分補給員',
-        active: { type: 'water', amount: 10 }   // 技能效果：恢復 10 點水分
+        active: { type: 'water', amount: 8, initialUses: 2 }
     },
     itemProvider: {
         name: '道具供應商',
-        active: { type: 'item', item: 'firstAidKit' } // 技能效果：獲得急救包
+        active: { type: 'item', initialUses: 5 } // 技能效果：隨機提供道具，可使用5次
     }
 };
 
@@ -316,16 +316,59 @@ function showPopup(title, message) {
 
 // 重置遊戲
 function resetGame() {
+    // 1. 重置核心遊戲狀態變數
     initializeStudentStats();
     initializeInventory();
     initializeEventSequence();
     totalCollaborationScore = 0;
     photosUnlockedThisSession = 0;
     unlockedPhotos.clear();
-    gameOverPopup.classList.add('hidden','opacity-0');
-    popupContent.classList.add('scale-90','opacity-0');
-    updateUI();
-    displayEvent();
+    selectedStudent = null;
+    selectedRole = null;
+    rescueTriggered = false;
+    navigatorMapBonusActive = false;
+
+    // 2. 重置所有角色的技能使用次數
+    for (const roleKey in ROLES) {
+        if (ROLES[roleKey].active && typeof ROLES[roleKey].active.initialUses === 'number') {
+            ROLES[roleKey].active.currentUses = ROLES[roleKey].active.initialUses;
+        }
+    }
+
+    // 3. 隱藏遊戲結束彈窗
+    if (gameOverPopup) {
+        gameOverPopup.classList.add('hidden', 'opacity-0');
+        if (popupContent) { // 確保 popupContent 存在
+            popupContent.classList.add('scale-90', 'opacity-0');
+            popupContent.classList.remove('scale-100', 'opacity-100');
+        }
+    }
+
+    // 4. 返回歡迎畫面
+    if (gamePlayScreen) gamePlayScreen.classList.add('hidden');
+    if (welcomeScreen) welcomeScreen.classList.remove('hidden');
+
+    // 5. 重置選擇下拉選單
+    if (playerSelect) playerSelect.value = "";
+    if (roleSelect) roleSelect.value = "";
+
+    // 6. 禁用開始按鈕
+    if (startButton) startButton.disabled = true;
+
+    // 7. 清除遊戲畫面中的動態內容
+    if (eventTextElem) eventTextElem.innerHTML = "";
+    if (optionsArea) optionsArea.innerHTML = "";
+    if (outcomeTextElem) outcomeTextElem.innerHTML = "";
+    if (roleInfoElem) {
+        roleInfoElem.textContent = '';
+        roleInfoElem.classList.add('hidden');
+    }
+    if (roleBadge) {
+        roleBadge.textContent = '';
+        roleBadge.classList.add('hidden');
+    }
+    if (skillBtn) skillBtn.classList.add('hidden');
+    if (studentListArea) studentListArea.innerHTML = ""; // 清空學生列表
 }
 
 // 處理選項
@@ -798,6 +841,14 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 為彈出視窗中的重新開始按鈕綁定事件
+  if (restartButtonPopup) {
+    restartButtonPopup.addEventListener('click', () => {
+        playSound(audioClick); // 播放點擊音效
+        resetGame();           // 呼叫重置遊戲函式
+    });
+  }
+
 
   audioClick        = document.getElementById('audioClick');
   audioPositive     = document.getElementById('audioPositive');
@@ -834,8 +885,12 @@ window.addEventListener('DOMContentLoaded', () => {
     playSound(audioClick);
     selectedStudent = playerSelect.value;
     selectedRole    = roleSelect.value;
-    roleSkillUsed   = false;
     rescueTriggered = false;
+    // Initialize/Reset current skill uses for the selected role
+    const currentRoleData = ROLES[selectedRole];
+    if (currentRoleData && currentRoleData.active && typeof currentRoleData.active.initialUses === 'number') {
+        currentRoleData.active.currentUses = currentRoleData.active.initialUses;
+    }
     welcomeScreen.classList.add('hidden');
     gamePlayScreen.classList.remove('hidden');
     initializeStudentStats();
@@ -848,10 +903,12 @@ window.addEventListener('DOMContentLoaded', () => {
     // 為技能按鈕添加事件監聽器
     if (skillBtn) {
         skillBtn.addEventListener('click', () => {
-            if (roleSkillUsed || !selectedRole) return;
-
             const roleDefinition = ROLES[selectedRole];
-            if (!roleDefinition || !roleDefinition.active) return;
+            // Check if skill can be used (role exists, skill defined, uses available)
+            if (!roleDefinition || !roleDefinition.active ||
+                (typeof roleDefinition.active.currentUses === 'number' && roleDefinition.active.currentUses <= 0)) {
+                return;
+            }
 
             const activeSkill = roleDefinition.active;
             let skillUsedSuccessfully = false;
@@ -877,19 +934,28 @@ window.addEventListener('DOMContentLoaded', () => {
                     skillOutcomeMessage = `${roleDefinition.name}使用了技能，全體同學補充了 ${activeSkill.amount} 點水分！`;
                     break;
                 case 'item': // 新增對 'item' 類型的處理
-                    if (activeSkill.item && ITEMS[activeSkill.item]) {
-                        if (!inventory[activeSkill.item]) { // 檢查是否已擁有該道具
-                            inventory[activeSkill.item] = true; // 給予道具
+                    const allItemKeys = Object.keys(ITEMS);
+                    if (allItemKeys.length === 0) {
+                        skillOutcomeMessage = `${roleDefinition.name} 環顧四周，但發現沒有任何道具可以提供！`;
+                        // skillUsedSuccessfully will be set to true later, consuming a use
+                        break;
+                    }
+                    const randomItemKey = allItemKeys[Math.floor(Math.random() * allItemKeys.length)];
+                    const chosenItemDefinition = ITEMS[randomItemKey];
+
+                    if (chosenItemDefinition) {
+                        if (!inventory[randomItemKey]) { // 檢查是否已擁有該道具
+                            inventory[randomItemKey] = true; // 給予道具
                             // 物品獲得時的脈衝動畫
-                            const itemElem = document.getElementById(ITEMS[activeSkill.item].id);
+                            const itemElem = document.getElementById(chosenItemDefinition.id);
                             if (itemElem) {
                                 itemElem.classList.add('animate-pulse-item');
                                 setTimeout(() => itemElem.classList.remove('animate-pulse-item'), ITEM_PULSE_ANIMATION_MS);
                             }
-                            skillOutcomeMessage = `${roleDefinition.name} 提供了 ${ITEMS[activeSkill.item].name}！`; // 道具名稱
+                            skillOutcomeMessage = `${roleDefinition.name} 提供了 ${chosenItemDefinition.name}！`; // 道具名稱
                             playSound(audioItemPickup); // 播放獲得道具的音效
                         } else {
-                            skillOutcomeMessage = `${roleDefinition.name} 嘗試提供 ${ITEMS[activeSkill.item].name}，但你們已經有了！`;
+                            skillOutcomeMessage = `${roleDefinition.name} 想要提供 ${chosenItemDefinition.name}，但你已經有了！`;
                         }
                     } else {
                         skillOutcomeMessage = `${roleDefinition.name} 嘗試提供一個未知的物品。`; // 防禦性提示
@@ -905,7 +971,9 @@ window.addEventListener('DOMContentLoaded', () => {
             skillUsedSuccessfully = true;
 
             if (skillUsedSuccessfully) {
-                roleSkillUsed = true;
+                if (typeof roleDefinition.active.currentUses === 'number') {
+                    roleDefinition.active.currentUses--; // Decrement uses
+                }
                 refreshRoleBadge(); // 更新徽章和按鈕狀態
                 updateUI();         // 更新學生狀態條等
                 // 道具供應商技能不直接影響學生生死，所以主要檢查體力和水分技能
@@ -954,14 +1022,27 @@ window.addEventListener('DOMContentLoaded', () => {
 
             // Populate and show Skill Status in roleBadge
             if (roleBadge) {
-                roleBadge.textContent = `${roleSkillUsed ? '✅ 已用' : '✨ 未用'}`;
+                let skillStatusText = '✨ 技能可用'; // Default
+                if (roleData.active && typeof roleData.active.currentUses === 'number' && typeof roleData.active.initialUses === 'number') {
+                    if (roleData.active.currentUses <= 0) {
+                        skillStatusText = '❌ 已用完';
+                    } else if (roleData.active.initialUses > 1) { // Multi-use skill
+                        skillStatusText = `⚡ 可用 ${roleData.active.currentUses} / ${roleData.active.initialUses}`;
+                    } else { // Single-use skill, and currentUses > 0
+                        skillStatusText = '✨ 未用';
+                    }
+                }
+                roleBadge.textContent = skillStatusText;
                 roleBadge.classList.remove('hidden'); // Show
             }
 
             // Show and set state for Skill Button
             if (skillBtn) {
                 skillBtn.classList.remove('hidden');
-                skillBtn.disabled = roleSkillUsed;
+                // Disable button if currentUses is 0 or less, or if uses system is not defined for the skill
+                skillBtn.disabled = !(roleData.active &&
+                                    typeof roleData.active.currentUses === 'number' &&
+                                    roleData.active.currentUses > 0);
             }
         } else {
             // Fallback if roleData is not found
@@ -975,7 +1056,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
             if (skillBtn) {
                 skillBtn.classList.add('hidden');
-            }
+          }
         }
     }
   }
