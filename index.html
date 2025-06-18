@@ -1,178 +1,187 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>六年四班 - 福頭山大冒險</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <script>
-        // For production, it's recommended to install Tailwind CSS: https://tailwindcss.com/docs/installation
-        tailwind.config = {
-            // darkMode: 'media', // Consistently bright theme
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    animation: {
-                        'pulse-item': 'pulse-item-animation 0.8s ease-in-out',
-                        'shake-text': 'shake-text-animation 0.5s cubic-bezier(.36,.07,.19,.97) both',
-                        'bounce-text': 'bounce-text-animation 0.6s ease-out',
-                    },
-                    keyframes: {
-                        'pulse-item-animation': {
-                            '0%, 100%': { transform: 'scale(1)', opacity: '1' },
-                            '50%': { transform: 'scale(1.1)', opacity: '0.7' },
-                        },
-                        'shake-text-animation': {
-                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
-                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
-                            '30%, 50%, 70%': { transform: 'translate3d(-3px, 0, 0)' },
-                            '40%, 60%': { transform: 'translate3d(3px, 0, 0)' },
-                        },
-                        'bounce-text-animation': {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-8px)' },
-                        }
-                    }
-                }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>六年四班 - 福頭山大冒險</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          animation: {
+            'pulse-item': 'pulse-item-animation 0.8s ease-in-out',
+            'shake-text': 'shake-text-animation 0.5s cubic-bezier(.36,.07,.19,.97) both',
+            'bounce-text': 'bounce-text-animation 0.6s ease-out'
+          },
+          keyframes: {
+            'pulse-item-animation': {
+              '0%,100%': { transform: 'scale(1)', opacity: '1' },
+              '50%':     { transform: 'scale(1.1)', opacity: '0.7' }
+            },
+            'shake-text-animation': {
+              '10%,90%':  { transform: 'translate3d(-1px,0,0)' },
+              '20%,80%':  { transform: 'translate3d( 2px,0,0)' },
+              '30%,50%,70%': { transform: 'translate3d(-3px,0,0)' },
+              '40%,60%':  { transform: 'translate3d( 3px,0,0)' }
+            },
+            'bounce-text-animation': {
+              '0%,100%': { transform: 'translateY(0)' },
+              '50%':     { transform: 'translateY(-8px)' }
             }
+          }
         }
-    </script>
-    <style>
-        .resource-bar-fill { transition: width 0.5s ease-in-out, background-color 0.5s ease-in-out; }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #e9d5ff;
-            border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #a855f7;
-            border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #9333ea;
-        }
-    </style>
+      }
+    };
+  </script>
+
+  <style>
+    .resource-bar-fill { transition: width .5s ease-in-out, background-color .5s ease-in-out; }
+    .custom-scrollbar::-webkit-scrollbar{ width:8px; }
+    .custom-scrollbar::-webkit-scrollbar-track{ background:#e9d5ff;border-radius:10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb{ background:#a855f7;border-radius:10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover{ background:#9333ea; }
+    html {
+      -webkit-text-size-adjust: 100%; /* For older Safari */
+      text-size-adjust: 100%; /* Standard property */
+    }
+  </style>
 </head>
+
 <body class="bg-gradient-to-br from-purple-200 via-indigo-200 to-blue-200 text-gray-800 min-h-screen flex flex-col items-center justify-center p-4 selection:bg-purple-300 selection:text-purple-900">
 
-    <!-- 歡迎畫面 -->
-    <div id="welcomeScreen" class="text-center bg-white bg-opacity-80 p-8 rounded-xl shadow-xl max-w-lg w-full">
-        <h1 class="text-4xl font-bold text-purple-600 mb-4">六年四班的福頭山大冒險</h1>
-        <p class="text-lg text-gray-700 mb-6">
-            親愛的六年四班同學們，準備好和賴冠儒老師一起挑戰充滿驚奇與智慧的『智慧之山』了嗎？
-            這是一場考驗你們團結、勇氣與智慧的旅程。讓我們一起克服困難，創造屬於我們的回憶吧！
-        </p>
-        <button id="startButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition duration-300 ease-in-out hover:scale-105 active:scale-95 text-xl">
-            開始冒險！🚀
-        </button>
+  <!-- =============== 歡迎畫面 ================= -->
+  <div id="welcomeScreen" class="text-center bg-white bg-opacity-80 p-8 rounded-xl shadow-xl max-w-lg w-full">
+    <h1 class="text-4xl font-bold text-purple-600 mb-4">六年四班的福頭山大冒險</h1>
+    <p class="text-lg text-gray-700 mb-6">
+      親愛的六年四班同學們，準備好和賴冠儒老師一起挑戰充滿驚奇與智慧的『智慧之山』了嗎？
+      這是一場考驗你們團結、勇氣與智慧的旅程。讓我們一起克服困難，創造屬於我們的回憶吧！
+    </p>
+
+    <!-- 選擇學生與角色 -->
+    <div id="preGameSelections" class="mb-4 space-y-2 text-left">
+      <label class="block">
+        <span class="text-gray-700">選擇你的同學：</span>
+        <select id="playerSelect" class="mt-1 block w-full rounded-md border-gray-300">
+          <option value="">-- 請選擇 --</option>
+        </select>
+      </label>
+      <label class="block">
+        <span class="text-gray-700">選擇你的角色：</span>
+        <select id="roleSelect" class="mt-1 block w-full rounded-md border-gray-300">
+          <option value="">-- 請選擇 --</option>
+          <option value="physicalCaptain">體能隊長</option>
+          <option value="navigator">智慧導航員</option>
+          <option value="waterOfficer">水資源官</option>
+          <option value="rescueLeader">救援隊長</option>
+        </select>
+      </label>
     </div>
 
-    <!-- 遊戲主畫面 -->
-    <div id="gamePlayScreen" class="hidden flex flex-col md:flex-row items-start justify-center p-4 md:p-6 gap-4 md:gap-6 h-full w-full max-w-screen-xl">
+    <button id="startButton"
+            class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition duration-300 ease-in-out hover:scale-105 active:scale-95 text-xl">
+      開始冒險！🚀
+    </button>
+  </div>
 
-        <!-- 左側主遊戲區域 -->
-        <div id="mainGameArea" class="w-full md:w-3/5 lg:w-2/3 bg-slate-50 bg-opacity-90 p-4 md:p-6 rounded-xl shadow-xl flex flex-col items-center max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <!-- Combined Row for Progress Info and Student Status -->
-            <div class="w-full flex justify-between items-baseline mb-1">
-                <div>
-                    <span class="text-lg font-semibold text-gray-700">關卡進度: </span>
-                    <span id="stageProgressText" class="text-lg font-semibold text-purple-600">0 / 0</span>
-                </div>
-                <div>
-                    <span id="studentStatusText" class="text-lg font-semibold text-purple-600">存活學生: 0/0</span>
-                </div>
-            </div>
+  <!-- =============== 遊戲主畫面 ================= -->
+  <!-- ⭐ items-stretch 讓左右兩欄在交叉軸同高 -->
+  <div id="gamePlayScreen"
+       class="hidden flex flex-col md:flex-row md:items-start justify-center p-4 md:p-6 gap-4 md:gap-6 h-full w-full max-w-screen-xl">
 
-            <!-- Progress Bar -->
-            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3 relative" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                <div id="stageProgressBar" class="resource-bar-fill h-full bg-purple-500 rounded-full"></div>
-            </div>
-            <p id="progressText" class="text-xl md:text-2xl font-bold text-gray-800 mb-4 text-center"></p>
+    <!-- ===== 左側主遊戲區 ===== -->
+    <div id="mainGameArea"
+         class="w-full md:w-3/5 lg:w-2/3 bg-slate-50 bg-opacity-90 p-4 md:p-6 rounded-xl shadow-xl flex flex-col items-center overflow-y-auto custom-scrollbar">
 
-            <!-- 隊伍平均體力條顯示 -->
-            <div class="mb-3 w-full">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="text-md font-semibold text-gray-700">全班平均體力 💪</span>
-                    <span id="staminaValue" class="text-xl font-bold text-red-500"></span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-3.5 relative" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                    <div id="staminaBar" class="resource-bar-fill h-full bg-green-400 rounded-full"></div>
-                </div>
+      <!-- 資源條 -->
+      <div class="w-full mb-4 space-y-3">
+        <!-- 體力 -->
+        <div class="flex items-center">
+          <span class="text-sm font-medium text-gray-700 mr-2 w-12">體力:</span>
+          <div class="flex-1 bg-gray-300 rounded-full h-5 shadow-inner">
+            <div id="staminaBar" class="resource-bar-fill h-full rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center text-xs font-medium text-white" style="width: 100%;">
+              <span id="staminaValue">50</span>
             </div>
-
-            <!-- 隊伍平均水分條顯示 -->
-            <div class="mb-3 w-full">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="text-md font-semibold text-gray-700">全班平均水分 💧</span>
-                    <span id="waterValue" class="text-xl font-bold text-blue-500"></span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-3.5 relative" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                    <div id="waterBar" class="resource-bar-fill h-full bg-blue-400 rounded-full"></div>
-                </div>
-            </div>
-
-            <!-- 物品欄顯示 -->
-            <div class="mb-4 w-full text-left bg-slate-100 bg-opacity-80 p-3 rounded-xl shadow-md">
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">物品欄🎒</h3>
-                <!-- 修改後的物品容器 -->
-                <div id="inventoryDisplay"
-                     class="flex flex-row space-x-3 p-2 bg-slate-200/60 rounded-md overflow-x-auto custom-scrollbar">
-                    <!--
-                        flex: 啟用 Flexbox
-                        flex-row: 設定主軸方向為橫向 (列)
-                        space-x-3: 在物品之間添加水平間距 (可調整)
-                        p-2 bg-slate-200/60 rounded-md: 容器本身的內邊距、背景和圓角
-                        overflow-x-auto: 如果物品總寬度超過容器，則顯示水平滾動條
-                        custom-scrollbar: 使用您已定義的自訂滾動條樣式
-                    -->
-                    <div id="itemEnergyBar" title="能量棒🍫" class="item flex-shrink-0 w-28 h-10 bg-yellow-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">能量棒🍫</div>
-                    <div id="itemSnack" title="零食🍪" class="item flex-shrink-0 w-28 h-10 bg-orange-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">零食🍪</div>
-                    <div id="itemMap" title="地圖🗺️" class="item flex-shrink-0 w-28 h-10 bg-green-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">地圖🗺️</div>
-                    <div id="itemInsectRepellent" title="驅蟲劑🧴" class="item flex-shrink-0 w-28 h-10 bg-teal-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">驅蟲劑🧴</div>
-                    <div id="itemSurvivalRope" title="求生繩索🎗️" class="item flex-shrink-0 w-28 h-10 bg-indigo-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">求生繩🎗️</div>
-                    <div id="itemWaterBottle" title="水瓶💧" class="item flex-shrink-0 w-28 h-10 bg-blue-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">水瓶💧</div>
-                    <div id="itemFirstAidKit" title="急救包🩹" class="item flex-shrink-0 w-28 h-10 bg-red-200 rounded-lg shadow-sm flex items-center justify-center text-xl text-gray-700 cursor-default transform transition hover:scale-105">急救包🩹</div>
-                    <!--
-                        對於每個物品 (item):
-                        flex-shrink-0: 防止物品在空間不足時被壓縮
-                        w-20 h-20: 設定固定的寬度和高度 (可調整以適應內容，例如 text-3xl 的 emoji)
-                        bg-*: 保留各自的背景顏色
-                        rounded-lg shadow-sm: 保留圓角和陰影
-                        flex items-center justify-center: 使 emoji 在格子內居中顯示
-                        text-3xl text-gray-700: 保留文字大小和顏色
-                        cursor-default: 由於物品本身不可點擊，設置默認鼠標樣式
-                        transform transition hover:scale-105: 保留原有的 hover 放大效果和過渡
-                        title 屬性是為了滑鼠懸停時顯示物品名稱，script.js 中 ITEMS.name 已經定義了名稱，
-                        這裡的 title 只是 HTML 層面的提示，可以與 JS 中的定義保持一致或按需調整。
-                        script.js 會根據物品是否擁有來切換 'opacity-50' class，並在獲得時添加 'animate-pulse-item' class。
-                        這些 JavaScript 的行為將繼續正常運作。
-                    -->
-                </div>
-            </div>
-
-            <!-- 事件文字 -->
-            <div class="my-4 p-4 bg-amber-100 bg-opacity-80 rounded-lg shadow-inner min-h-[100px] w-full">
-                <p id="eventText" class="text-xl md:text-2xl text-gray-700 leading-relaxed"></p>
-                <p id="outcomeText" class="mt-2 text-sm text-gray-500 italic"></p> <!-- outcomeText 現在主要用於顯示附加的倒下訊息，或可移除 -->
-            </div>
-
-            <!-- 選項區域 -->
-            <div id="optionsArea" class="w-full grid grid-cols-1 md:grid-cols-2 gap-3">
-                <!-- 選項按鈕會由 JavaScript 動態填入 -->
-            </div>
+          </div>
         </div>
-
-        <!-- 右側學生狀態列表 -->
-        <div id="studentListArea" class="w-full md:w-2/5 lg:w-1/3 bg-slate-50 bg-opacity-90 p-4 rounded-xl shadow-xl flex flex-col max-h-[90vh]">
-            <h2 class="text-xl font-semibold text-gray-800 mb-3 text-center border-b pb-2 border-gray-300">全班狀態</h2>
+        <!-- 水分 -->
+        <div class="flex items-center">
+          <span class="text-sm font-medium text-gray-700 mr-2 w-12">水分:</span>
+          <div class="flex-1 bg-gray-300 rounded-full h-5 shadow-inner">
+            <div id="waterBar" class="resource-bar-fill h-full rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center text-xs font-medium text-white" style="width: 100%;">
+              <span id="waterValue">50</span>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- 進度條 -->
+      <div class="w-full mb-6">
+        <div class="flex justify-between text-sm font-medium text-gray-700 mb-1">
+          <span>關卡進度</span>
+          <span id="stageProgressText">0 / 0</span>
+        </div>
+        <div class="w-full bg-gray-300 rounded-full h-3.5 shadow-inner">
+          <div id="stageProgressBar" class="resource-bar-fill h-full rounded-full bg-purple-400" style="width: 0%;"></div>
+        </div>
+         <p id="studentStatusText" class="text-sm text-center text-gray-600 mt-1">存活學生: 0/0</p> <!-- 學生狀態文字 -->
+      </div>
+
+      <!-- 事件顯示區 -->
+      <div class="w-full bg-white bg-opacity-75 p-4 rounded-lg shadow-md mb-6 min-h-[100px]">
+        <p id="eventText" class="text-lg text-gray-800 leading-relaxed"></p>
+        <p id="outcomeText" class="text-md text-gray-600 mt-3 italic"></p> <!-- outcomeTextElem is declared in JS -->
+      </div>
+
+      <!-- 選項區 -->
+      <div id="optionsArea" class="w-full flex flex-col space-y-3 mb-6">
+        <!-- Options buttons will be added here by JS -->
+      </div>
+
+      <!-- 物品欄 -->
+      <div id="inventoryDisplay" class="w-full grid grid-cols-4 sm:grid-cols-7 gap-2 p-3 bg-white bg-opacity-75 rounded-lg shadow-md">
+        <span id="itemEnergyBar" class="text-3xl cursor-default transition-opacity duration-300 text-center" title="能量棒🍫">🍫</span>
+        <span id="itemSnack" class="text-3xl cursor-default transition-opacity duration-300 text-center" title="零食🍪">🍪</span>
+        <span id="itemMap" class="text-3xl cursor-default transition-opacity duration-300 text-center" title="地圖🗺️">🗺️</span>
+        <span id="itemInsectRepellent" class="text-3xl cursor-default transition-opacity duration-300 text-center" title="驅蟲劑🧴">🧴</span>
+        <span id="itemSurvivalRope" class="text-3xl cursor-default transition-opacity duration-300 text-center" title="求生繩索🎗️">🎗️</span>
+        <span id="itemWaterBottle" class="text-3xl cursor-default transition-opacity duration-300 text-center" title="水瓶💧">💧</span>
+        <span id="itemFirstAidKit" class="text-3xl cursor-default transition-opacity duration-300 text-center" title="急救包🩹">🩹</span>
+      </div>
     </div>
+
+    <!-- ===== 右側面板：角色徽章 + 學生列表 ===== -->
+    <!-- ⭐ self-stretch：把此卡片高度撐滿父容器 -->
+    <div id="rightPanel" class="w-full md:w-2/5 lg:w-1/3 md:self-start bg-white bg-opacity-90 p-4 rounded-xl shadow-xl flex flex-col space-y-4">
+
+      <!-- 角色技能按鈕（預設隱藏；進入遊戲後由 JS 顯示） -->
+      <button id="roleSkillBtn"
+              class="hidden bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded">
+        使用技能 ⚡
+      </button>
+
+      <!-- 標題 + 徽章 -->
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-800">全班狀態</h2>
+        <span id="roleBadge"
+              class="hidden bg-yellow-100 text-yellow-800 font-semibold py-1 px-3 rounded-full shadow-sm"></span>
+      </div>
+
+      <div class="border-t border-gray-300"></div>
+
+      <!-- ⭐ flex-1 + overflow-y-auto：內容超出時顯示捲軸 -->
+      <div id="studentListArea"
+           class="flex-1 overflow-y-auto custom-scrollbar space-y-2">
+        <!-- JS 會在此插入學生條目 -->
+      </div>
+    </div>
+  </div><!-- /#gamePlayScreen -->
 
     <!-- 遊戲結束/勝利彈出視窗 -->
     <div id="gameOverPopup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50 transition-opacity duration-300 ease-in-out opacity-0">
@@ -222,63 +231,82 @@
     <script src="script.js"></script>
 
     <script>
+        // Height synchronization using MutationObserver
         document.addEventListener('DOMContentLoaded', () => {
             const mainGameArea = document.getElementById('mainGameArea');
             const studentListArea = document.getElementById('studentListArea');
+            const rightPanel = document.getElementById('rightPanel'); // Get the rightPanel element
             const gamePlayScreen = document.getElementById('gamePlayScreen');
 
+            // Function to adjust the height of the student list area to match the main game area
             function adjustStudentListHeight() {
-                if (mainGameArea && studentListArea && gamePlayScreen && gamePlayScreen.offsetParent !== null) { // Check if gamePlayScreen is visible
+                // Ensure rightPanel is also available
+                if (mainGameArea && studentListArea && rightPanel && gamePlayScreen && gamePlayScreen.offsetParent !== null) {
                     const mainGameHeight = mainGameArea.offsetHeight;
+                    console.log('[AdjustHeight] mainGameArea.offsetHeight:', mainGameHeight);
                     if (mainGameHeight > 0) {
-                        studentListArea.style.height = mainGameHeight + 'px';
-                        // console.log(`Adjusted studentListArea height to: ${mainGameHeight}px`);
+                        // Set the height of the entire rightPanel to match mainGameArea
+                        rightPanel.style.height = mainGameHeight + 'px';
+                        // studentListArea has 'flex-1' and 'overflow-y-auto'.
+                        // It will now correctly fill the available space in the sized rightPanel and scroll if needed.
+                        // No need to set studentListArea.style.height directly; CSS handles it.
+                        console.log('[AdjustHeight] rightPanel.style.height SET TO:', rightPanel.style.height);
+                    } else {
+                        console.log('[AdjustHeight] mainGameHeight is 0 or less, not setting height.');
                     }
                 }
             }
-
-            // Adjust on window resize
             window.addEventListener('resize', adjustStudentListHeight);
-
-            // Adjust when game screen becomes visible or its content changes
-            if (gamePlayScreen) {
+            // Observe changes in gamePlayScreen visibility and mainGameArea content
+            if (gamePlayScreen && mainGameArea && studentListArea && rightPanel) { // Add rightPanel to the condition
                 const observer = new MutationObserver((mutationsList) => {
                     for (const mutation of mutationsList) {
-                        // Check if gamePlayScreen became visible
                         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                             if (!gamePlayScreen.classList.contains('hidden')) {
-                                setTimeout(adjustStudentListHeight, 50); // Allow layout to settle
+                                requestAnimationFrame(adjustStudentListHeight); // Use rAF
                             }
                         }
-                        // Check if mainGameArea's direct children or subtree changed, which might affect its height
-                        // This is a more general check for content changes within mainGameArea
                         if (mutation.type === 'childList' || mutation.type === 'subtree') {
-                             setTimeout(adjustStudentListHeight, 50); // Re-adjust after content change
+                             requestAnimationFrame(adjustStudentListHeight); // Use rAF
                         }
                     }
                 });
 
-                observer.observe(gamePlayScreen, { attributes: true }); // Observe gamePlayScreen visibility
-                if(mainGameArea) {
-                    observer.observe(mainGameArea, { childList: true, subtree: true }); // Observe mainGameArea content changes
-                }
+                observer.observe(gamePlayScreen, { attributes: true });
+                observer.observe(mainGameArea, { childList: true, subtree: true });
             }
 
-            // Fallback: If game is already visible (e.g. during development, if 'hidden' is removed manually)
+            // Initial adjustment if the game screen is already visible on load
             if (gamePlayScreen && !gamePlayScreen.classList.contains('hidden')) {
-                 setTimeout(adjustStudentListHeight, 100); // Longer delay to ensure all initial rendering is done
+                 requestAnimationFrame(adjustStudentListHeight); // Use rAF
             }
 
-            // Expose a function to manually trigger height adjustment if needed from script.js
+            // Expose function for manual trigger from script.js if needed
             window.triggerStudentListHeightAdjust = () => {
-                setTimeout(adjustStudentListHeight, 50);
+                requestAnimationFrame(adjustStudentListHeight);
             };
-            // 您可以在 script.js 中的 displayEvent 或 updateUI 函數的末尾調用 window.triggerStudentListHeightAdjust();
-            // 例如，在 displayEvent 函數的末尾（在 setTimeout 更新下一個事件之前）加入：
-            // if (typeof window.triggerStudentListHeightAdjust === 'function') {
-            //     window.triggerStudentListHeightAdjust();
-            // }
         });
     </script>
+<!-- Commented out or remove the redundant monkey-patching script -->
+<!--
+<script>
+(function(){
+  // This script is commented out as the MutationObserver approach is preferred
+  // and implemented in the script above.
+  // If you need to patch displayEvent/updateUI, consider doing it within the
+  // DOMContentLoaded listener in the script above after script.js is loaded.
+  function patch(fnName){
+    var orig = window[fnName];
+    if(typeof orig === 'function'){
+      window[fnName] = function(){
+        var res = orig.apply(this, arguments);
+        setTimeout(adjustStudentListHeight, 50);
+        return res;
+      };
+    }
+  }
+  patch('displayEvent');
+</script>
+-->
 </body>
 </html>
