@@ -47,29 +47,18 @@ let rescueTriggered = false;
 let navigatorMapBonusActive = false; // Flag for Navigator's map skill
 
 const ROLES = {
-  physicalCaptain: {
-    name   : '體能隊長',
-    passive: ({avgSta}) => avgSta <= 30 ? { stamina: 1 } : {},
-    active : { type: 'stamina', amount: 6 }
-  },
-  navigator: {
-    name   : '智慧導航員',
-    passive: () => {
-        // 25% 觸發機率
-        return Math.random() < 0.25 ? { preserveMapOnUse: true } : {};
+    staminaSupporter: {
+        name: '體力支援者',
+        active: { type: 'stamina', amount: 10 } // 技能效果：恢復 10 點體力
     },
-    active : { type: 'cartographersInsight' } // Changed skill type
-  },
-  waterOfficer: {
-    name   : '水資源官',
-    passive: ({avgWat}) => avgWat <= 30 ? { water: 1 } : {},
-    active : { type: 'water', amount: 6 }
-  },
-  rescueLeader: {
-    name   : '救援隊長',
-    passive: () => ({}),
-    active : { type: 'revive', amount: { stamina: 5, water: 5 } }
-  }
+    waterSupporter: {
+        name: '水分補給員',
+        active: { type: 'water', amount: 10 }   // 技能效果：恢復 10 點水分
+    },
+    itemProvider: {
+        name: '道具供應商',
+        active: { type: 'item', item: 'firstAidKit' } // 技能效果：獲得急救包
+    }
 };
 
 // ===== 宣告所有會在 updateUI/handleOption/displayEvent 使用的 UI 變數 =====
@@ -250,13 +239,18 @@ function checkAndUnlockPhotosBasedOnCollaboration() {
 function applyRolePassive() {
     if (!selectedRole) return;
     const role = ROLES[selectedRole];
+
+    // Check if the role exists and has a passive function
+    if (!role || typeof role.passive !== 'function') {
+        return; // Exit if no passive function defined for this role
+    }
+
     const active = students.filter(s=>s.active);
     if (!active.length) return;
     const avgSta = active.reduce((t,s)=>t+s.stamina,0)/active.length;
     const avgWat = active.reduce((t,s)=>t+s.water,0)/active.length;
     const delta  = role.passive({ avgSta, avgWat });
     let passiveTriggeredMessage = "";
-
     active.forEach(s=>{
         if (delta.stamina) {
             s.stamina = Math.min(INITIAL_STAMINA, s.stamina + delta.stamina);
@@ -287,34 +281,7 @@ function applyRolePassive() {
 
 // 檢查遊戲狀態
 function checkGameStatus() {
-    // 救援隊長被動：首位倒下自動救援一次
-    if (selectedRole==='rescueLeader' && !rescueTriggered) {
-        const down = students.find(s=>!s.active && !s.rescued);
-        if (down) {
-            down.active = true;
-            // 使用角色定義中的恢復量
-            const reviveAmount = ROLES.rescueLeader.active.amount;
-            down.stamina = Math.min(INITIAL_STAMINA, reviveAmount.stamina);
-            down.water = Math.min(INITIAL_WATER, reviveAmount.water);
-            down.rescued = true;
-            rescueTriggered = true;
-            // 增加被動技能觸發提示
-            if (outcomeTextElem && gamePlayScreen && !gamePlayScreen.classList.contains('hidden')) {
-                // 使用 setTimeout 避免與其他 UI 更新衝突
-                // 僅當 outcomeTextElem 為空時顯示，避免覆蓋其他消息
-                if (!outcomeTextElem.innerHTML.trim()) {
-                    setTimeout(() => {
-                        outcomeTextElem.innerHTML = `<span class="text-blue-600 font-semibold">${ROLES.rescueLeader.name}的被動技能觸發！${down.name}在鼓舞下重新站起來了！</span>`;
-                        setTimeout(() => { // 一段時間後清除提示
-                            if (outcomeTextElem.innerHTML.includes(down.name)) {
-                                outcomeTextElem.innerHTML = "";
-                            }
-                        }, 4000);
-                    }, 100);
-                }
-            }
-        }
-    }
+        // Obsolete rescueLeader passive logic removed as the role no longer exists.
     const alive = students.filter(s=>s.active).length;
     if (!alive) {
         playSound(audioGameLose);
@@ -900,7 +867,6 @@ window.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                     skillOutcomeMessage = `${roleDefinition.name}使用了技能，全體同學恢復了 ${activeSkill.amount} 點體力！`;
-                    skillUsedSuccessfully = true;
                     break;
                 case 'water':
                     students.forEach(s => {
@@ -909,47 +875,41 @@ window.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                     skillOutcomeMessage = `${roleDefinition.name}使用了技能，全體同學補充了 ${activeSkill.amount} 點水分！`;
-                    skillUsedSuccessfully = true;
                     break;
-                case 'cartographersInsight':
-                    if (!inventory['map']) {
-                        inventory['map'] = true;
-                        // Pulse animation for map item
-                        const mapElem = document.getElementById(ITEMS['map'].id);
-                        if (mapElem) {
-                            mapElem.classList.add('animate-pulse-item');
-                            setTimeout(() => mapElem.classList.remove('animate-pulse-item'), ITEM_PULSE_ANIMATION_MS);
+                case 'item': // 新增對 'item' 類型的處理
+                    if (activeSkill.item && ITEMS[activeSkill.item]) {
+                        if (!inventory[activeSkill.item]) { // 檢查是否已擁有該道具
+                            inventory[activeSkill.item] = true; // 給予道具
+                            // 物品獲得時的脈衝動畫
+                            const itemElem = document.getElementById(ITEMS[activeSkill.item].id);
+                            if (itemElem) {
+                                itemElem.classList.add('animate-pulse-item');
+                                setTimeout(() => itemElem.classList.remove('animate-pulse-item'), ITEM_PULSE_ANIMATION_MS);
+                            }
+                            skillOutcomeMessage = `${roleDefinition.name} 提供了 ${ITEMS[activeSkill.item].name}！`; // 道具名稱
+                            playSound(audioItemPickup); // 播放獲得道具的音效
+                        } else {
+                            skillOutcomeMessage = `${roleDefinition.name} 嘗試提供 ${ITEMS[activeSkill.item].name}，但你們已經有了！`;
                         }
-                        skillOutcomeMessage = "智慧導航員憑藉對地形的敏銳直覺，繪製了一張簡易地圖！🗺️";
                     } else {
-                        navigatorMapBonusActive = true; // Activate the bonus for next map use
-                        skillOutcomeMessage = "智慧導航員集中精神研究地圖，下次使用地圖時將更加熟練，不會耗損地圖！🧠";
-                    }
-                    skillUsedSuccessfully = true;
-                    break;
-                case 'revive':
-                    const studentToRevive = students.find(s => !s.active);
-                    if (studentToRevive) {
-                        studentToRevive.active = true;
-                        studentToRevive.stamina = Math.min(INITIAL_STAMINA, activeSkill.amount.stamina);
-                        studentToRevive.water = Math.min(INITIAL_WATER, activeSkill.amount.water);
-                        // 注意：主動技能的復活不設置 student.rescued，該標記專用於被動技能
-                        skillOutcomeMessage = `${roleDefinition.name}使用了救援技能！${studentToRevive.name}恢復了意識！`;
-                        skillUsedSuccessfully = true;
-                    } else {
-                        skillOutcomeMessage = `${roleDefinition.name}嘗試使用救援技能，但目前沒有同學需要救援。`;
-                        skillUsedSuccessfully = true; // 技能依然視為已使用
+                        skillOutcomeMessage = `${roleDefinition.name} 嘗試提供一個未知的物品。`; // 防禦性提示
                     }
                     break;
                 default:
                     console.warn("未知技能類型:", activeSkill.type);
+                    // 即使技能類型未知，也將 skillUsedSuccessfully 設為 false，避免後續邏輯錯誤
+                    skillUsedSuccessfully = false; // 確保在未知類型時，技能不被標記為成功使用
+                    return; // 直接返回，不執行後續的 UI 更新和狀態檢查
             }
+            // 將 skillUsedSuccessfully 的賦值移到 switch 外部，確保所有有效 case 都會執行到
+            skillUsedSuccessfully = true;
 
             if (skillUsedSuccessfully) {
                 roleSkillUsed = true;
                 refreshRoleBadge(); // 更新徽章和按鈕狀態
                 updateUI();         // 更新學生狀態條等
-                if (activeSkill.type === 'stamina' || activeSkill.type === 'water' || activeSkill.type === 'revive') {
+                // 道具供應商技能不直接影響學生生死，所以主要檢查體力和水分技能
+                if (activeSkill.type === 'stamina' || activeSkill.type === 'water') {
                     if (checkGameStatus()) return; // 如果遊戲結束則返回
                 }
                 if (outcomeTextElem && skillOutcomeMessage) {
