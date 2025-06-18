@@ -1,6 +1,6 @@
 // 遊戲變數初始化
-const INITIAL_STAMINA = 65; // 全班共享體力值上限及初始值
-const INITIAL_WATER = 65; // 全班共享水分值上限及初始值
+const INITIAL_STAMINA = 300; // 全班共享體力值上限及初始值
+const INITIAL_WATER = 300; // 全班共享水分值上限及初始值
 const PER_TURN_STAMINA_COST = 2; // 每回合固定消耗體力 (此處未按要求修改，僅修改水分)
 const PER_TURN_WATER_COST = 1;   // 每回合固定消耗水分 (per active student) - 已修改為 1
 
@@ -13,7 +13,7 @@ const HIGH_STUDENT_RESOURCE_THRESHOLD_PERCENT = 70; // 學生單項資源高閾�
 const LOW_STUDENT_RESOURCE_THRESHOLD_PERCENT = 30;  // 學生單項資源低閾值百分比
 
 // 持續時間設定 (毫秒)
-const OUTCOME_DISPLAY_DURATION_MS = 3200; // 顯示結果後等待的時間
+const OUTCOME_DISPLAY_DURATION_MS = 280; // 顯示結果後等待的時間
 const ITEM_PULSE_ANIMATION_MS = 800;      // 物品獲得時的脈衝動畫時間
 // 物品效果數值
 const WATER_BOTTLE_RECOVERY_AMOUNT = 12; // 獲得水瓶時恢復的水量
@@ -417,11 +417,10 @@ const numSlopeEvents = 9;  // 新增斜坡階段事件數量定義
     const hasS2 = formattedText.includes("[studentName2]");
     const hasS  = formattedText.includes("[studentName]");
 
-    let namesToFetchCount;
-    if (hasS2) namesToFetchCount = Math.max(2, numStudentsHint);
-    else if (hasS1 || hasS) namesToFetchCount = Math.max(1, numStudentsHint);
-    else namesToFetchCount = numStudentsHint;
-    namesToFetchCount = Math.max(0, namesToFetchCount);
+    // 强制根据占位符数量获取名字
+    let namesToFetchCount = 0;
+    if (hasS2) namesToFetchCount = 2;
+    else if (hasS1 || hasS) namesToFetchCount = 1;
 
     const studentNamesForText = getRandomStudentName(students, namesToFetchCount);
     let actualNamesUsed = [];
@@ -772,27 +771,35 @@ const numSlopeEvents = 9;  // 新增斜坡階段事件數量定義
             // Message can be more specific, e.g., "所有同學都已精疲力盡..."
             showPopup("挑戰失敗！😭", `所有同學都已精疲力盡或脫水！${teacherName}和同學們無法繼續前進…`);
             return true; // 遊戲結束
+
+        // 遊戲勝利分支 (checkGameStatus)
         } else if (sequenceIndex >= currentEventSequence.length) {
-            // 遊戲勝利
             playSound(audioGameWin);
 
-            // 1. 優先顯示通關圖片 (end.jpg) - suppress its item pickup sound
-            //    這裡會使用現有的照片解鎖彈窗來顯示圖片。
-            //    圖片下方的文字可以自訂，例如 "通關紀念！"
+            // 顯示通關照片
             showPhotoUnlockNotification(PHOTO_BASE_PATH + "end.jpg", "通關紀念！", false);
 
-            // 2. 準備並顯示原本的文字版勝利彈窗。
-            //    這個彈窗會被圖片彈窗覆蓋，關閉圖片彈窗後即可見。
-            let survivorNames = students.filter(s => s.active).map(s => s.name).join("、");
-            if (students.filter(s => s.active).length === students.length) {
+            // --- 新增：勝利時才綁這個監聽，並設定 { once: true } ---
+            const closePhotoBtn = document.getElementById('closePhotoPopupButton');
+            closePhotoBtn.addEventListener('click', () => {
+                hidePhotoUnlockNotification();
+
+                // 計算倖存者名字
+                let survivorNames = students.filter(s => s.active).map(s => s.name).join("、");
+                if (students.filter(s => s.active).length === students.length) {
                 survivorNames = "六年四班全體同學";
-            } else if (students.filter(s => s.active).length === 0) {
-                // 此情況應已被 activeStudentCount === 0 的檢查捕獲
-                survivorNames = "沒有人";
+                }
+
+                // 顯示文字版過關彈窗
+                showPopup(
+                "恭喜過關！🏆",
+                `${teacherName}和 ${survivorNames} 成功登上山頂！這就是團結、智慧與堅持的力量！🎉`
+                );
+            }, { once: true });  // 加上 once: true，點一次自動解除
+
+            return true;
             }
-            showPopup("恭喜過關！🏆", `${teacherName}和 ${survivorNames} 成功登上山頂！這就是團結、智慧與堅持的力量！🎉`);
-            return true; // 遊戲結束
-        }
+
         console.log("遊戲繼續..."); // 新增 log
         return false; // 遊戲未結束
     }
