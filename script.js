@@ -255,10 +255,34 @@ function applyRolePassive() {
     const avgSta = active.reduce((t,s)=>t+s.stamina,0)/active.length;
     const avgWat = active.reduce((t,s)=>t+s.water,0)/active.length;
     const delta  = role.passive({ avgSta, avgWat });
+    let passiveTriggeredMessage = "";
+
     active.forEach(s=>{
-        if (delta.stamina) s.stamina = Math.min(INITIAL_STAMINA, s.stamina + delta.stamina);
-        if (delta.water)   s.water   = Math.min(INITIAL_WATER,   s.water   + delta.water);
+        if (delta.stamina) {
+            s.stamina = Math.min(INITIAL_STAMINA, s.stamina + delta.stamina);
+            if (!passiveTriggeredMessage && selectedRole === 'physicalCaptain') {
+                passiveTriggeredMessage = `${ROLES.physicalCaptain.name}的被動技能觸發，全體同學體力微幅恢復！`;
+            }
+        }
+        if (delta.water)   {
+            s.water   = Math.min(INITIAL_WATER,   s.water   + delta.water);
+            if (!passiveTriggeredMessage && selectedRole === 'waterOfficer') {
+                passiveTriggeredMessage = `${ROLES.waterOfficer.name}的被動技能觸發，全體同學水分微幅補充！`;
+            }
+        }
     });
+
+    if (passiveTriggeredMessage && outcomeTextElem && gamePlayScreen && !gamePlayScreen.classList.contains('hidden')) {
+        // 避免覆蓋其他重要提示，如果 outcomeTextElem 為空才顯示
+        if (!outcomeTextElem.innerHTML.trim()) {
+            outcomeTextElem.innerHTML = `<span class="text-sky-600 font-semibold">${passiveTriggeredMessage}</span>`;
+            setTimeout(() => {
+                if (outcomeTextElem.innerHTML.includes(passiveTriggeredMessage)) {
+                    outcomeTextElem.innerHTML = "";
+                }
+            }, 3000); // 顯示 3 秒
+        }
+    }
 }
 
 // 檢查遊戲狀態
@@ -277,14 +301,17 @@ function checkGameStatus() {
             // 增加被動技能觸發提示
             if (outcomeTextElem && gamePlayScreen && !gamePlayScreen.classList.contains('hidden')) {
                 // 使用 setTimeout 避免與其他 UI 更新衝突
-                setTimeout(() => {
-                    outcomeTextElem.innerHTML = `<span class="text-blue-600 font-semibold">${ROLES.rescueLeader.name}的被動技能觸發！${down.name}在鼓舞下重新站起來了！</span>`;
-                    setTimeout(() => { // 一段時間後清除提示
-                        if (outcomeTextElem.innerHTML.includes(down.name)) {
-                            outcomeTextElem.innerHTML = "";
-                        }
-                    }, 4000);
-                }, 100);
+                // 僅當 outcomeTextElem 為空時顯示，避免覆蓋其他消息
+                if (!outcomeTextElem.innerHTML.trim()) {
+                    setTimeout(() => {
+                        outcomeTextElem.innerHTML = `<span class="text-blue-600 font-semibold">${ROLES.rescueLeader.name}的被動技能觸發！${down.name}在鼓舞下重新站起來了！</span>`;
+                        setTimeout(() => { // 一段時間後清除提示
+                            if (outcomeTextElem.innerHTML.includes(down.name)) {
+                                outcomeTextElem.innerHTML = "";
+                            }
+                        }, 4000);
+                    }, 100);
+                }
             }
         }
     }
@@ -386,10 +413,13 @@ function handleOption(opt, namesUsed) {
                         if (passiveEffect.preserveMapOnUse) {
                             consumeThisItem = false;
                             console.log("智慧導航員被動技能：路徑記憶觸發，地圖未消耗！");
-                            if (outcomeTextElem && eventTextElem) { // 確保元素存在
+                            if (eventTextElem) { // 確保元素存在
                                 // 將被動技能提示附加到主事件結果之後
                                 const passiveMsg = "<br><span class='text-indigo-600 font-semibold'>智慧導航員的路徑記憶發揮作用，本次地圖使用未消耗！</span>";
                                 eventTextElem.innerHTML += passiveMsg; //附加到 eventTextElem
+                            } else if (outcomeTextElem && !outcomeTextElem.innerHTML.trim()) { // 如果 eventTextElem 不可用，嘗試 outcomeTextElem
+                                outcomeTextElem.innerHTML = "<span class='text-indigo-600 font-semibold'>智慧導航員的路徑記憶發揮作用，本次地圖使用未消耗！</span>";
+                                // 此處的清除可能需要額外處理，因為它不在 eventTextElem 的正常流程中
                             }
                         }
                     }
