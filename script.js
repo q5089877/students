@@ -135,6 +135,13 @@ function shuffleArray(array) {
     return array;
 }
 
+// Helper function to get a random integer between min and max (inclusive)
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 // 初始化遊戲事件序列
 function initializeEventSequence() {
     currentEventSequence = [];
@@ -377,71 +384,49 @@ function handleOption(opt, namesUsed) {
     eventTextElem.innerHTML = "";
 
     // 消耗物品
-    // (此處假設您已修復 formatTextWithStudentNames 以返回 namesUsed)
-
-    // 修正：應用選項導致的體力與水分變化
+    // 應用選項導致的體力與水分變化
     if (opt.staminaChange !== undefined || opt.waterChange !== undefined) {
-        const staminaDelta = opt.staminaChange || 0;
-        const waterDelta = opt.waterChange || 0;
         const targetStudents = opt.effectScope === 'all_active'
             ? students.filter(s => s.active)
             : (namesUsed && namesUsed.length > 0 ? students.filter(s => namesUsed.includes(s.name) && s.active) : []);
 
         if (targetStudents.length > 0) {
-            students.forEach(student => {
-                if (targetStudents.some(ts => ts.name === student.name)) {
-                    student.stamina = Math.max(0, Math.min(INITIAL_STAMINA, student.stamina + staminaDelta));
-                    student.water = Math.max(0, Math.min(INITIAL_WATER, student.water + waterDelta));
-                    if (student.stamina === 0 || student.water === 0) {
-                        student.active = false;
-                    }
+            targetStudents.forEach(student => {
+                let currentStaminaDelta = 0;
+                if (opt.staminaChange < 0) { // 體力扣除：4-8 隨機
+                    currentStaminaDelta = -getRandomInt(4, 8);
+                } else if (opt.staminaChange > 0) { // 體力增加：固定值
+                    currentStaminaDelta = opt.staminaChange;
                 }
-            });
-        } else if (opt.effectScope === 'all_active') { // Fallback for all_active if namesUsed is not applicable
-            students.forEach(student => {
-                if (student.active) {
-                    student.stamina = Math.max(0, Math.min(INITIAL_STAMINA, student.stamina + staminaDelta));
-                    student.water = Math.max(0, Math.min(INITIAL_WATER, student.water + waterDelta));
-                    if (student.stamina === 0 || student.water === 0) {
-                        student.active = false;
-                    }
+
+                let currentWaterDelta = 0;
+                if (opt.waterChange < 0) { // 水分扣除：4-8 隨機
+                    currentWaterDelta = -getRandomInt(4, 8);
+                } else if (opt.waterChange > 0) { // 水分增加：固定值
+                    currentWaterDelta = opt.waterChange;
+                }
+
+                student.stamina = Math.max(0, Math.min(INITIAL_STAMINA, student.stamina + currentStaminaDelta));
+                student.water = Math.max(0, Math.min(INITIAL_WATER, student.water + currentWaterDelta));
+
+                if (student.stamina === 0 || student.water === 0) {
+                    student.active = false;
                 }
             });
         }
     }
 
     if (opt.requiredItem && opt.consumeItem) {
-        // Ensure consumeItem is treated as an array
         const itemsToConsume = Array.isArray(opt.consumeItem) ? opt.consumeItem : (opt.consumeItem ? [opt.consumeItem] : []);
 
         itemsToConsume.forEach(itemKey => {
-            if (inventory.hasOwnProperty(itemKey)) { // Check if itemKey is a valid key in inventory
+            if (inventory.hasOwnProperty(itemKey)) {
                 if (itemKey === 'map' && navigatorMapBonusActive) {
                     console.log("智慧導航員主動技能：本回合地圖免消耗。");
                     navigatorMapBonusActive = false; // Bonus is consumed
-                    // 主動技能優先，如果主動技能生效，則不檢查被動
                 } else {
-                    let consumeThisItem = true;
-                    // 檢查智慧導航員的被動技能
-                    if (itemKey === 'map' && selectedRole === 'navigator' && !navigatorMapBonusActive) {
-                        const passiveEffect = ROLES.navigator.passive();
-                        if (passiveEffect.preserveMapOnUse) {
-                            consumeThisItem = false;
-                            console.log("智慧導航員被動技能：路徑記憶觸發，地圖未消耗！");
-                            if (eventTextElem) { // 確保元素存在
-                                // 將被動技能提示附加到主事件結果之後
-                                const passiveMsg = "<br><span class='text-indigo-600 font-semibold'>智慧導航員的路徑記憶發揮作用，本次地圖使用未消耗！</span>";
-                                eventTextElem.innerHTML += passiveMsg; //附加到 eventTextElem
-                            } else if (outcomeTextElem && !outcomeTextElem.innerHTML.trim()) { // 如果 eventTextElem 不可用，嘗試 outcomeTextElem
-                                outcomeTextElem.innerHTML = "<span class='text-indigo-600 font-semibold'>智慧導航員的路徑記憶發揮作用，本次地圖使用未消耗！</span>";
-                                // 此處的清除可能需要額外處理，因為它不在 eventTextElem 的正常流程中
-                            }
-                        }
-                    }
-
-                    if (consumeThisItem) {
-                        inventory[itemKey] = false;
-                    }
+                    // 移除了舊的 navigator 被動技能檢查，因為該角色已不存在
+                    inventory[itemKey] = false;
                 }
             } else {
                 console.warn(`Attempted to consume non-existent item: ${itemKey}`);
@@ -483,9 +468,12 @@ function handleOption(opt, namesUsed) {
     // 播放音效
     if (opt.staminaChange > 0 || opt.waterChange > 0) {
         eventTextElem.classList.add('animate-bounce-text');
+        // 確保 outcomeTextElem 也應用動畫，如果它是主要顯示結果的地方
+        if (outcomeTextElem && outcomeTextElem.innerHTML.trim() === "") outcomeTextElem.classList.add('animate-bounce-text');
         playSound(audioPositive);
     } else if (opt.staminaChange < 0 || opt.waterChange < 0) {
         eventTextElem.classList.add('animate-shake-text');
+        if (outcomeTextElem && outcomeTextElem.innerHTML.trim() === "") outcomeTextElem.classList.add('animate-shake-text');
         playSound(audioNegative);
     }
 
@@ -497,6 +485,8 @@ function handleOption(opt, namesUsed) {
     setTimeout(() => {
         // eventTextElem 包含主結果和可能的被動技能提示，將在下一個 displayEvent 開始時被清空。
         // outcomeTextElem 主要用於主動技能的結果，也會在 displayEvent 開始時被清空。
+        eventTextElem.classList.remove('animate-bounce-text', 'animate-shake-text');
+        if (outcomeTextElem) outcomeTextElem.classList.remove('animate-bounce-text', 'animate-shake-text');
         sequenceIndex++;
         const over = checkGameStatus();
         if (!over) {
